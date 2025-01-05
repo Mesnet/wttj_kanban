@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom'
-import { useJob, useCandidates } from '../../hooks'
+import { useJob, useCandidates, useUpdateCandidate } from '../../hooks'
 import { Text } from '@welcome-ui/text'
 import { Flex } from '@welcome-ui/flex'
 import { Box } from '@welcome-ui/box'
@@ -30,6 +30,7 @@ function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
   const { candidates } = useCandidates(jobId)
+  const updateCandidate = useUpdateCandidate();
   const [sortedCandidates, setSortedCandidates] = useState<SortedCandidates>({})
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null)
 
@@ -140,10 +141,12 @@ function JobShow() {
       [column]: updatedItems,
     });
 
-    console.log(`Item ID: ${activeId}`);
-    console.log(`Updated Position: ${overIndex}`);
-    console.log(`Updated Column: ${column}`);
+    updateCandidateBackend(jobId as string, activeId, {
+      position: overIndex,
+      status: column as Statuses,
+    })
   };
+
 
   const handleMoveBetweenColumns = (
     sourceColumn: string,
@@ -177,12 +180,29 @@ function JobShow() {
       [destinationColumn]: destinationItems,
     });
 
-    console.log(`Item ID: ${activeId}`);
-    console.log(`Updated Position: ${overIndex}`);
-    console.log(`Updated Column: ${destinationColumn}`);
+    updateCandidateBackend(jobId as string, activeId, {
+      position: overIndex,
+      status: destinationColumn as Statuses,
+    })
   };
 
+  const updateCandidateBackend = (
+    jobId: string,
+    candidateId: number,
+    updates: Partial<Pick<Candidate, 'status' | 'position'>>
+  ) => {
+    if (!jobId) {
+      console.error('Job ID is undefined. Cannot update candidate.');
+      return;
+    }
 
+    // Call mutate with the correct payload structure
+    updateCandidate.mutate({
+      jobId,
+      candidateId,
+      updates: { candidate: updates }, // Wrap updates under the "candidate" key
+    });
+  };
 
   return (
     <>
