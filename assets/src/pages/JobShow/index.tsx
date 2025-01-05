@@ -68,7 +68,6 @@ function JobShow() {
     }
   };
 
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -88,16 +87,8 @@ function JobShow() {
     }
 
     // Step 1: Identify source and destination columns
-    const sourceColumn = Object.keys(sortedCandidates).find(column =>
-      sortedCandidates[column].find(candidate => candidate.id === Number(activeElementId))
-    );
-
-    const destinationColumn =
-      overElementType === 'column'
-        ? overElementId // If dropped on a column
-        : Object.keys(sortedCandidates).find(column =>
-            sortedCandidates[column].find(candidate => candidate.id === Number(overElementId))
-          );
+    const sourceColumn = findColumnByItemId(Number(activeElementId));
+    const destinationColumn = findDestinationColumn(overElementType, overElementId);
 
     if (!sourceColumn || !destinationColumn) {
       setActiveCandidate(null);
@@ -105,52 +96,90 @@ function JobShow() {
     }
 
     if (sourceColumn === destinationColumn) {
-      // Reordering within the same column
-      const items = [...sortedCandidates[sourceColumn]];
-      const activeIndex = items.findIndex(candidate => candidate.id === Number(activeElementId));
-      const overIndex = items.findIndex(candidate => candidate.id === Number(overElementId));
-
-      const updatedItems = arrayMove(items, activeIndex, overIndex);
-
-      // Step 4: Update state only for the source column
-      setSortedCandidates({
-        ...sortedCandidates,
-        [sourceColumn]: updatedItems,
-      });
+      handleReorderWithinColumn(sourceColumn, Number(activeElementId), Number(overElementId));
     } else {
-      // Moving to a different column
-
-      // Step 2: Remove element from the source column
-      const sourceItems = sortedCandidates[sourceColumn].filter(
-        candidate => candidate.id !== Number(activeElementId)
+      handleMoveBetweenColumns(
+        sourceColumn,
+        destinationColumn,
+        Number(activeElementId),
+        overElementType,
+        Number(overElementId)
       );
-
-      // Step 3: Add element to the destination column
-      const movedItem = sortedCandidates[sourceColumn].find(
-        candidate => candidate.id === Number(activeElementId)
-      )!;
-      const destinationItems = [...(sortedCandidates[destinationColumn] || [])];
-
-      if (overElementType === 'item') {
-        // Dropped above or below another item
-        const overIndex = destinationItems.findIndex(
-          candidate => candidate.id === Number(overElementId)
-        );
-        destinationItems.splice(overIndex, 0, movedItem); // Insert at the correct position
-      } else {
-        // Dropped in an empty column or at the bottom
-        destinationItems.push(movedItem);
-      }
-
-      // Step 4: Update state for both columns
-      setSortedCandidates({
-        ...sortedCandidates,
-        [sourceColumn]: sourceItems,
-        [destinationColumn]: destinationItems,
-      });
     }
 
     setActiveCandidate(null);
+  };
+
+  const findColumnByItemId = (itemId: number): string | undefined => {
+    return Object.keys(sortedCandidates).find(column =>
+      sortedCandidates[column].find(candidate => candidate.id === itemId)
+    );
+  };
+
+  const findDestinationColumn = (
+    overElementType: string,
+    overElementId: string
+  ): string | undefined => {
+    if (overElementType === 'column') {
+      return overElementId; // If dropped on a column
+    }
+    return Object.keys(sortedCandidates).find(column =>
+      sortedCandidates[column].find(candidate => candidate.id === Number(overElementId))
+    );
+  };
+
+  const handleReorderWithinColumn = (column: string, activeId: number, overId: number) => {
+    const items = [...sortedCandidates[column]];
+    const activeIndex = items.findIndex(candidate => candidate.id === activeId);
+    const overIndex = items.findIndex(candidate => candidate.id === overId);
+
+    const updatedItems = arrayMove(items, activeIndex, overIndex);
+
+    setSortedCandidates({
+      ...sortedCandidates,
+      [column]: updatedItems,
+    });
+
+    console.log(`Item ID: ${activeId}`);
+    console.log(`Updated Position: ${overIndex}`);
+    console.log(`Updated Column: ${column}`);
+  };
+
+  const handleMoveBetweenColumns = (
+    sourceColumn: string,
+    destinationColumn: string,
+    activeId: number,
+    overElementType: string,
+    overElementId: number
+  ) => {
+    const sourceItems = sortedCandidates[sourceColumn].filter(
+      candidate => candidate.id !== activeId
+    );
+    const movedItem = sortedCandidates[sourceColumn].find(
+      candidate => candidate.id === activeId
+    )!;
+    const destinationItems = [...(sortedCandidates[destinationColumn] || [])];
+
+    let overIndex: number = destinationItems.length; // Default to the end of the column
+
+    if (overElementType === 'item') {
+      // Dropped above or below another item
+      overIndex = destinationItems.findIndex(candidate => candidate.id === overElementId);
+      destinationItems.splice(overIndex, 0, movedItem); // Insert at the correct position
+    } else {
+      // Dropped in an empty column or at the bottom
+      destinationItems.push(movedItem);
+    }
+
+    setSortedCandidates({
+      ...sortedCandidates,
+      [sourceColumn]: sourceItems,
+      [destinationColumn]: destinationItems,
+    });
+
+    console.log(`Item ID: ${activeId}`);
+    console.log(`Updated Position: ${overIndex}`);
+    console.log(`Updated Column: ${destinationColumn}`);
   };
 
 
