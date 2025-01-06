@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { Socket } from "phoenix";
+
 import { useParams } from 'react-router-dom'
 import { useJob, useCandidates, useUpdateCandidate } from '../../hooks'
 import { Text } from '@welcome-ui/text'
@@ -26,6 +29,12 @@ interface SortedCandidates {
   [key: string]: Candidate[]
 }
 
+type CandidateUpdatedPayload = {
+  id: number;
+  position: number;
+  status: Statuses;
+};
+
 function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
@@ -33,6 +42,82 @@ function JobShow() {
   const updateCandidate = useUpdateCandidate()
   const [sortedCandidates, setSortedCandidates] = useState<SortedCandidates>({})
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null)
+
+  useEffect(() => {
+    if (!jobId) return;
+
+    // Initialize the Phoenix Socket and Channel
+    const socket = new Socket("/socket", { params: { token: "your-auth-token" } });
+    socket.connect();
+
+    const channel = socket.channel(`job:${jobId}`, {});
+    channel.join()
+      .receive("ok", () => console.log(`Joined job:${jobId} channel successfully`))
+      .receive("error", (err: any) => console.error(`Failed to join job:${jobId} channel`, err));
+
+    // Listen for "candidate_updated" events
+    channel.on("candidate_updated", (payload: CandidateUpdatedPayload) => {
+      console.log("Real-time update received:", payload);
+
+      const { id, position, status } = payload;
+
+      setSortedCandidates((prev) => {
+        // Ensure `prev` is defined and is an object
+        if (!prev || typeof prev !== "object") return prev;
+
+        const updated = { ...prev };
+
+        let fromColumn = null;
+
+        // Step 1: Find and remove the candidate from the old column
+        for (const column of Object.keys(updated)) {
+          const candidates = updated[column] || []; // Ensure the column has a valid array
+          const index = candidates.findIndex((c) => c.id === id);
+          if (index !== -1) {
+            // Remove the candidate from the old column
+            const [candidate] = candidates.splice(index, 1);
+
+            // Store the from column for reindexing later
+            fromColumn = column;
+
+            // Step 2: Add the candidate to the new column
+            if (candidate) {
+              candidate.status = status;
+              candidate.position = position;
+              if (!updated[status]) updated[status] = [];
+              updated[status].splice(position, 0, candidate); // Insert at the new position
+            }
+
+            break;
+          }
+        }
+
+        // Step 3: Reorder candidates in the "from" column to fix positions
+        if (fromColumn && Array.isArray(updated[fromColumn])) {
+          updated[fromColumn] = updated[fromColumn].map((candidate, idx) => ({
+            ...candidate,
+            position: idx,
+          }));
+        }
+
+        // Step 4: Reorder candidates in the "to" column to fix positions
+        if (Array.isArray(updated[status])) {
+          updated[status] = updated[status].map((candidate, idx) => ({
+            ...candidate,
+            position: idx,
+          }));
+        }
+
+        return updated;
+      });
+    });
+
+    return () => {
+      channel.leave();
+      socket.disconnect();
+    };
+  }, [jobId]);
+
 
   useMemo(() => {
     if (!candidates) return
