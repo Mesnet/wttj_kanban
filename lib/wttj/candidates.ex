@@ -6,7 +6,7 @@ defmodule Wttj.Candidates do
   import Ecto.Query, warn: false
   alias Wttj.Repo
 
-  alias Wttj.Candidates.Candidate
+  alias Wttj.Candidates.{Candidate, CandidateService}
 
   @doc """
   Returns the list of candidates.
@@ -69,9 +69,7 @@ defmodule Wttj.Candidates do
 
   """
   def update_candidate(%Candidate{} = candidate, attrs) do
-    candidate
-    |> Candidate.changeset(attrs)
-    |> Repo.update()
+    CandidateService.update_candidate(candidate, attrs)
   end
 
   @doc """

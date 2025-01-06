@@ -16,5 +16,9 @@ defmodule Wttj.Candidates.Candidate do
     candidate
     |> cast(attrs, [:email, :status, :position, :job_id])
     |> validate_required([:email, :status, :position, :job_id])
+    |> unique_constraint([:job_id, :position, :status],
+      name: "candidates_job_id_position_status_index",
+      message: "has already been taken"
+    )
   end
 end

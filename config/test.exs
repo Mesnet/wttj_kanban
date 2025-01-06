@@ -6,7 +6,7 @@ import Config
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :wttj, Wttj.Repo,
-  username: "postgres",
+  username: "admin",
   password: "postgres",
   hostname: "localhost",
   database: "wttj_test#{System.get_env("MIX_TEST_PARTITION")}",
