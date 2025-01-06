@@ -1,6 +1,7 @@
 defmodule Wttj.Candidates.CandidateService do
   alias Wttj.Repo
   alias Wttj.Candidates.Candidate
+  alias WttjWeb.Endpoint
   import Ecto.Query
 
   @doc """
@@ -22,17 +23,31 @@ defmodule Wttj.Candidates.CandidateService do
       {:error, Candidate.changeset(candidate, %{})
       |> Ecto.Changeset.add_error(:base, "Invalid attributes: status or position is nil")}
     else
-      Repo.transaction(fn ->
+      result = Repo.transaction(fn ->
         if candidate_position_has_changed?(old_status, old_position, new_status, new_position) do
           reorder_other_positions(job_id, candidate_id, old_status, old_position, new_status, new_position)
         end
 
         Candidate
-        |> where([c], c.id == ^candidate_id)
-        |> Repo.one()
-        |> Candidate.changeset(attrs)
-        |> Repo.update!()
+          |> where([c], c.id == ^candidate_id)
+          |> Repo.one()
+          |> Candidate.changeset(attrs)
+          |> Repo.update!()
       end)
+
+
+      updated_candidate = case result do
+        {:ok, candidate} -> candidate
+        _ -> candidate
+      end
+      # Broadcast the update to the job:{job_id} channel
+      Endpoint.broadcast("job:#{candidate.job_id}", "candidate_updated", %{
+        id: updated_candidate.id,
+        position: updated_candidate.position,
+        status: updated_candidate.status
+      })
+
+      result
     end
   end
   def update_candidate(_, _), do: {:error, "Invalid candidate or attributes"}
