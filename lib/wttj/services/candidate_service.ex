@@ -27,13 +27,14 @@ defmodule Wttj.Candidates.CandidateService do
           reorder_other_positions(job_id, candidate_id, old_status, old_position, new_status, new_position)
         end
 
-        candidate
+        Candidate
+        |> where([c], c.id == ^candidate_id)
+        |> Repo.one()
         |> Candidate.changeset(attrs)
         |> Repo.update!()
       end)
     end
   end
-
   def update_candidate(_, _), do: {:error, "Invalid candidate or attributes"}
 
   defp candidate_position_has_changed?(old_status, old_position, new_status, new_position) do
@@ -42,20 +43,21 @@ defmodule Wttj.Candidates.CandidateService do
 
   defp reorder_other_positions(job_id, candidate_id, old_status, old_position, new_status, new_position) do
     if old_status != new_status do
-      move_candidate_to_placeholder(job_id, candidate_id)
+      move_candidate_to_placeholder(candidate_id)
       fill_gap_in_old_status(job_id, candidate_id, old_status, old_position)
       open_gap_in_new_status(job_id, candidate_id, new_status, new_position)
     else
-      move_candidate_to_placeholder(job_id, candidate_id)
+      move_candidate_to_placeholder(candidate_id)
       reorder_in_same_status(job_id, candidate_id, old_status, old_position, new_position)
     end
   end
 
-  defp move_candidate_to_placeholder(job_id, candidate_id) do
+  defp move_candidate_to_placeholder(candidate_id) do
+    # This is an uniq placeholder to avoid conflicts if multiple candidates are moved at the same time
     unique_placeholder = -(candidate_id)
 
     Candidate
-    |> where([c], c.id == ^candidate_id and c.job_id == ^job_id)
+    |> where([c], c.id == ^candidate_id)
     |> Repo.one()
     |> Candidate.changeset(%{position: unique_placeholder})
     |> Repo.update!()

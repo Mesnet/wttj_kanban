@@ -123,16 +123,16 @@ defmodule Wttj.Candidates.CandidateServiceTest do
     assert all_positions == [0, 1, 2]
   end
 
-  test "moves a candidate to a different status column", %{candidates: [_, candidate2, _]} do
+  test "moves a candidate to a different status column", %{candidates: [_, candidate1, _]} do
     attrs = %{position: 0, status: :interview}
-    {:ok, updated_candidate} = CandidateService.update_candidate(candidate2, attrs)
+    {:ok, updated_candidate} = CandidateService.update_candidate(candidate1, attrs)
 
     assert updated_candidate.position == 0
     assert updated_candidate.status == :interview
 
     new_status_positions =
       Candidate
-      |> where(job_id: ^candidate2.job_id, status: ^:new)
+      |> where(job_id: ^candidate1.job_id, status: ^:new)
       |> order_by(:position)
       |> Repo.all()
       |> Enum.map(& &1.position)
@@ -141,11 +141,46 @@ defmodule Wttj.Candidates.CandidateServiceTest do
 
     interview_positions =
       Candidate
-      |> where(job_id: ^candidate2.job_id, status: ^:interview)
+      |> where(job_id: ^candidate1.job_id, status: ^:interview)
       |> order_by(:position)
       |> Repo.all()
       |> Enum.map(& &1.position)
 
     assert interview_positions == [0]
+  end
+
+  test "moves candidate from one column to another and reorders positions", %{candidates: [candidate1, candidate2, candidate3], job: job} do
+    # Create a new candidate in the "interview" column
+    candidate4 = candidate_fixture(%{job_id: job.id, position: 0, status: :interview})
+
+    # Move candidate4 from "interview" column to "new" column at position 0
+    attrs = %{position: 0, status: :new}
+    {:ok, updated_candidate} = CandidateService.update_candidate(candidate4, attrs)
+
+    # Assert that candidate4 is now in the "new" column at position 0
+    assert updated_candidate.position == 0
+    assert updated_candidate.status == :new
+
+    # Reload all candidates in the "new" column
+    new_column_positions =
+      Candidate
+      |> where(job_id: ^job.id, status: ^:new)
+      |> order_by(:position)
+      |> Repo.all()
+      |> Enum.map(& &1.id)
+
+    # Verify the new ordering of the candidates in the "new" column
+    assert new_column_positions == [candidate4.id, candidate1.id, candidate2.id, candidate3.id]
+
+    # Reload all candidates in the "interview" column
+    interview_positions =
+      Candidate
+      |> where(job_id: ^job.id, status: ^:interview)
+      |> order_by(:position)
+      |> Repo.all()
+      |> Enum.map(& &1.position)
+
+    # Verify the "interview" column is now empty
+    assert interview_positions == []
   end
 end
