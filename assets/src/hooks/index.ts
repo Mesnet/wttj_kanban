@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from 'react-query'
+import { useQuery, useMutation } from 'react-query'
 import { getCandidates, getJob, getJobs, updateCandidate, Candidate } from '../api'
 
 export const useJobs = () => {
@@ -31,8 +31,6 @@ export const useCandidates = (jobId?: string) => {
 }
 
 export const useUpdateCandidate = () => {
-  const queryClient = useQueryClient();
-
   const mutation = useMutation({
     mutationFn: ({
       jobId,
@@ -42,10 +40,7 @@ export const useUpdateCandidate = () => {
       jobId: string;
       candidateId: number;
       updates: { candidate: Partial<Pick<Candidate, 'status' | 'position'>> };
-    }) => updateCandidate(jobId, candidateId, updates), // Call updateCandidate with the correct payload structure
-    onSuccess: () => {
-      queryClient.invalidateQueries(['candidates']); // Invalidate cache to refresh the candidate list
-    },
+    }) => updateCandidate(jobId, candidateId, updates),
     onError: (error) => {
       console.error('Error updating candidate:', error);
     },

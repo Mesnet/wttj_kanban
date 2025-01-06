@@ -30,7 +30,7 @@ function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
   const { candidates } = useCandidates(jobId)
-  const updateCandidate = useUpdateCandidate();
+  const updateCandidate = useUpdateCandidate()
   const [sortedCandidates, setSortedCandidates] = useState<SortedCandidates>({})
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null)
 
@@ -49,55 +49,55 @@ function JobShow() {
   )
 
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const activeId = active.id as string; // e.g., 'item_123'
+    const { active } = event
+    const activeId = active.id as string // e.g., 'item_123'
 
-    const [activeElementType, activeElementId] = activeId.split('_');
+    const [activeElementType, activeElementId] = activeId.split('_')
 
     if (activeElementType !== 'item') {
-      return; // Only handle drag starts for items
+      return // Only handle drag starts for items
     }
 
     // Find the column containing the active item
     const currentColumn = Object.keys(sortedCandidates).find(column =>
       sortedCandidates[column].find(candidate => candidate.id === Number(activeElementId))
-    );
+    )
 
     if (currentColumn) {
-      const candidate = sortedCandidates[currentColumn].find(c => c.id === Number(activeElementId));
-      setActiveCandidate(candidate || null);
+      const candidate = sortedCandidates[currentColumn].find(c => c.id === Number(activeElementId))
+      setActiveCandidate(candidate || null)
     }
-  };
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+    const { active, over } = event
     if (!over) {
-      setActiveCandidate(null);
-      return;
+      setActiveCandidate(null)
+      return
     }
 
-    const activeId = active.id as string; // e.g., 'item_123'
-    const overId = over.id as string; // e.g., 'item_456' or 'column_interview'
+    const activeId = active.id as string // e.g., 'item_123'
+    const overId = over.id as string // e.g., 'item_456' or 'column_interview'
 
-    const [overElementType, overElementId] = overId.split('_');
-    const [activeElementType, activeElementId] = activeId.split('_');
+    const [overElementType, overElementId] = overId.split('_')
+    const [activeElementType, activeElementId] = activeId.split('_')
 
     if (activeElementType !== 'item') {
-      setActiveCandidate(null);
-      return; // Only handle item drag operations
+      setActiveCandidate(null)
+      return // Only handle item drag operations
     }
 
     // Step 1: Identify source and destination columns
-    const sourceColumn = findColumnByItemId(Number(activeElementId));
-    const destinationColumn = findDestinationColumn(overElementType, overElementId);
+    const sourceColumn = findColumnByItemId(Number(activeElementId))
+    const destinationColumn = findDestinationColumn(overElementType, overElementId)
 
     if (!sourceColumn || !destinationColumn) {
-      setActiveCandidate(null);
-      return; // Invalid drag operation
+      setActiveCandidate(null)
+      return // Invalid drag operation
     }
 
     if (sourceColumn === destinationColumn) {
-      handleReorderWithinColumn(sourceColumn, Number(activeElementId), Number(overElementId));
+      handleReorderWithinColumn(sourceColumn, Number(activeElementId), Number(overElementId))
     } else {
       handleMoveBetweenColumns(
         sourceColumn,
@@ -105,48 +105,51 @@ function JobShow() {
         Number(activeElementId),
         overElementType,
         Number(overElementId)
-      );
+      )
     }
 
-    setActiveCandidate(null);
-  };
+    setActiveCandidate(null)
+  }
 
   const findColumnByItemId = (itemId: number): string | undefined => {
     return Object.keys(sortedCandidates).find(column =>
       sortedCandidates[column].find(candidate => candidate.id === itemId)
-    );
-  };
+    )
+  }
 
   const findDestinationColumn = (
     overElementType: string,
     overElementId: string
   ): string | undefined => {
     if (overElementType === 'column') {
-      return overElementId; // If dropped on a column
+      return overElementId // If dropped on a column
     }
     return Object.keys(sortedCandidates).find(column =>
       sortedCandidates[column].find(candidate => candidate.id === Number(overElementId))
-    );
-  };
+    )
+  }
+
+  const reindexedItems = (items: Candidate[]): Candidate[] => {
+    return items.map((item, index) => ({ ...item, position: index }))
+  }
 
   const handleReorderWithinColumn = (column: string, activeId: number, overId: number) => {
-    const items = [...sortedCandidates[column]];
-    const activeIndex = items.findIndex(candidate => candidate.id === activeId);
-    const overIndex = items.findIndex(candidate => candidate.id === overId);
+    const items = [...sortedCandidates[column]]
+    const activeIndex = items.findIndex(candidate => candidate.id === activeId)
+    const overIndex = items.findIndex(candidate => candidate.id === overId)
 
-    const updatedItems = arrayMove(items, activeIndex, overIndex);
+    const updatedItems = arrayMove(items, activeIndex, overIndex)
 
     setSortedCandidates({
       ...sortedCandidates,
-      [column]: updatedItems,
-    });
+      [column]: reindexedItems(updatedItems),
+    })
 
     updateCandidateBackend(jobId as string, activeId, {
       position: overIndex,
       status: column as Statuses,
     })
-  };
-
+  }
 
   const handleMoveBetweenColumns = (
     sourceColumn: string,
@@ -157,34 +160,34 @@ function JobShow() {
   ) => {
     const sourceItems = sortedCandidates[sourceColumn].filter(
       candidate => candidate.id !== activeId
-    );
+    )
     const movedItem = sortedCandidates[sourceColumn].find(
       candidate => candidate.id === activeId
-    )!;
-    const destinationItems = [...(sortedCandidates[destinationColumn] || [])];
+    )!
+    const destinationItems = [...(sortedCandidates[destinationColumn] || [])]
 
-    let overIndex: number = destinationItems.length; // Default to the end of the column
+    let overIndex: number = destinationItems.length // Default to the end of the column
 
     if (overElementType === 'item') {
       // Dropped above or below another item
-      overIndex = destinationItems.findIndex(candidate => candidate.id === overElementId);
-      destinationItems.splice(overIndex, 0, movedItem); // Insert at the correct position
+      overIndex = destinationItems.findIndex(candidate => candidate.id === overElementId)
+      destinationItems.splice(overIndex, 0, movedItem) // Insert at the correct position
     } else {
       // Dropped in an empty column or at the bottom
-      destinationItems.push(movedItem);
+      destinationItems.push(movedItem)
     }
 
     setSortedCandidates({
       ...sortedCandidates,
-      [sourceColumn]: sourceItems,
-      [destinationColumn]: destinationItems,
-    });
+      [sourceColumn]: reindexedItems(sourceItems),
+      [destinationColumn]: reindexedItems(destinationItems),
+    })
 
     updateCandidateBackend(jobId as string, activeId, {
       position: overIndex,
       status: destinationColumn as Statuses,
     })
-  };
+  }
 
   const updateCandidateBackend = (
     jobId: string,
@@ -192,8 +195,8 @@ function JobShow() {
     updates: Partial<Pick<Candidate, 'status' | 'position'>>
   ) => {
     if (!jobId) {
-      console.error('Job ID is undefined. Cannot update candidate.');
-      return;
+      console.error('Job ID is undefined. Cannot update candidate.')
+      return
     }
 
     // Call mutate with the correct payload structure
@@ -201,8 +204,8 @@ function JobShow() {
       jobId,
       candidateId,
       updates: { candidate: updates }, // Wrap updates under the "candidate" key
-    });
-  };
+    })
+  }
 
   return (
     <>
