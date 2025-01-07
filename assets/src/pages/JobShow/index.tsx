@@ -10,6 +10,7 @@ import CandidateCard from "../../components/Candidate"
 import { DndContext, closestCorners, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext } from "@dnd-kit/sortable"
 import { JobWebSocket } from "../../utils/websocket"
+import { onCandidateUpdated } from "../../utils/onCandidateUpdated"
 import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 
 type Statuses = "new" | "interview" | "hired" | "rejected"
@@ -33,44 +34,7 @@ function JobShow() {
       jobId,
       token: "your-secret-token",
       onCandidateUpdated: (payload) => {
-        const { id, position, status } = payload
-
-        setSortedCandidates((prev) => {
-          const updated = { ...prev }
-          let fromColumn = null
-
-          for (const column of Object.keys(updated)) {
-            const candidates = updated[column] || []
-            const index = candidates.findIndex((c) => c.id === id)
-            if (index !== -1) {
-              const [candidate] = candidates.splice(index, 1)
-              fromColumn = column
-              if (candidate) {
-                candidate.status = status as Statuses
-                candidate.position = position
-                if (!updated[status]) updated[status] = []
-                updated[status].splice(position, 0, candidate)
-              }
-              break
-            }
-          }
-
-          if (fromColumn && Array.isArray(updated[fromColumn])) {
-            updated[fromColumn] = updated[fromColumn].map((candidate, idx) => ({
-              ...candidate,
-              position: idx,
-            }))
-          }
-
-          if (Array.isArray(updated[status])) {
-            updated[status] = updated[status].map((candidate, idx) => ({
-              ...candidate,
-              position: idx,
-            }))
-          }
-
-          return updated
-        })
+        onCandidateUpdated({ payload: { ...payload, status: payload.status as Statuses }, setSortedCandidates })
       },
       onError: (err) => console.error("WebSocket error:", err),
     })

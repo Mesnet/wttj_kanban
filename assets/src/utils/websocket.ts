@@ -35,7 +35,6 @@ export class JobWebSocket {
       })
 
     this.channel.on("candidate_updated", (payload: CandidateUpdatedPayload) => {
-      console.log("Real-time update received:", payload)
       this.config.onCandidateUpdated(payload)
     })
   }
