@@ -1,39 +1,21 @@
-import { useEffect } from "react";
-import { Socket } from "phoenix";
+import { useEffect, useMemo, useState } from "react"
+import { useParams } from "react-router-dom"
+import { useJob, useCandidates, useUpdateCandidate } from "../../hooks"
+import { Text } from "@welcome-ui/text"
+import { Flex } from "@welcome-ui/flex"
+import { Box } from "@welcome-ui/box"
+import { Candidate } from "../../api"
+import JobStatus from "../../components/JobStatus"
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { SortableContext, arrayMove } from "@dnd-kit/sortable"
+import { JobWebSocket } from "../../utils/websocket" // Import the WebSocket utility
 
-import { useParams } from 'react-router-dom'
-import { useJob, useCandidates, useUpdateCandidate } from '../../hooks'
-import { Text } from '@welcome-ui/text'
-import { Flex } from '@welcome-ui/flex'
-import { Box } from '@welcome-ui/box'
-import { useMemo, useState } from 'react'
-import { Candidate } from '../../api'
-import JobStatus from '../../components/JobStatus'
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import { SortableContext, arrayMove } from '@dnd-kit/sortable'
-
-type Statuses = 'new' | 'interview' | 'hired' | 'rejected'
-const COLUMNS: Statuses[] = ['new', 'interview', 'hired', 'rejected']
+type Statuses = "new" | "interview" | "hired" | "rejected"
+const COLUMNS: Statuses[] = ["new", "interview", "hired", "rejected"]
 
 interface SortedCandidates {
   [key: string]: Candidate[]
 }
-
-type CandidateUpdatedPayload = {
-  id: number;
-  position: number;
-  status: Statuses;
-};
 
 function JobShow() {
   const { jobId } = useParams()
@@ -44,80 +26,61 @@ function JobShow() {
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null)
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId) return
 
-    // Initialize the Phoenix Socket and Channel
-    const socket = new Socket("/socket", { params: { token: "your-auth-token" } });
-    socket.connect();
+    const ws = new JobWebSocket({
+      jobId,
+      token: "your-auth-token",
+      onCandidateUpdated: (payload) => {
+        const { id, position, status } = payload
 
-    const channel = socket.channel(`job:${jobId}`, {});
-    channel.join()
-      .receive("ok", () => console.log(`Joined job:${jobId} channel successfully`))
-      .receive("error", (err: any) => console.error(`Failed to join job:${jobId} channel`, err));
+        setSortedCandidates((prev) => {
+          const updated = { ...prev }
+          let fromColumn = null
 
-    // Listen for "candidate_updated" events
-    channel.on("candidate_updated", (payload: CandidateUpdatedPayload) => {
-      console.log("Real-time update received:", payload);
-
-      const { id, position, status } = payload;
-
-      setSortedCandidates((prev) => {
-        // Ensure `prev` is defined and is an object
-        if (!prev || typeof prev !== "object") return prev;
-
-        const updated = { ...prev };
-
-        let fromColumn = null;
-
-        // Step 1: Find and remove the candidate from the old column
-        for (const column of Object.keys(updated)) {
-          const candidates = updated[column] || []; // Ensure the column has a valid array
-          const index = candidates.findIndex((c) => c.id === id);
-          if (index !== -1) {
-            // Remove the candidate from the old column
-            const [candidate] = candidates.splice(index, 1);
-
-            // Store the from column for reindexing later
-            fromColumn = column;
-
-            // Step 2: Add the candidate to the new column
-            if (candidate) {
-              candidate.status = status;
-              candidate.position = position;
-              if (!updated[status]) updated[status] = [];
-              updated[status].splice(position, 0, candidate); // Insert at the new position
+          for (const column of Object.keys(updated)) {
+            const candidates = updated[column] || []
+            const index = candidates.findIndex((c) => c.id === id)
+            if (index !== -1) {
+              const [candidate] = candidates.splice(index, 1)
+              fromColumn = column
+              if (candidate) {
+                candidate.status = status as Statuses
+                candidate.position = position
+                if (!updated[status]) updated[status] = []
+                updated[status].splice(position, 0, candidate)
+              }
+              break
             }
-
-            break;
           }
-        }
 
-        // Step 3: Reorder candidates in the "from" column to fix positions
-        if (fromColumn && Array.isArray(updated[fromColumn])) {
-          updated[fromColumn] = updated[fromColumn].map((candidate, idx) => ({
-            ...candidate,
-            position: idx,
-          }));
-        }
+          if (fromColumn && Array.isArray(updated[fromColumn])) {
+            updated[fromColumn] = updated[fromColumn].map((candidate, idx) => ({
+              ...candidate,
+              position: idx,
+            }))
+          }
 
-        // Step 4: Reorder candidates in the "to" column to fix positions
-        if (Array.isArray(updated[status])) {
-          updated[status] = updated[status].map((candidate, idx) => ({
-            ...candidate,
-            position: idx,
-          }));
-        }
+          if (Array.isArray(updated[status])) {
+            updated[status] = updated[status].map((candidate, idx) => ({
+              ...candidate,
+              position: idx,
+            }))
+          }
 
-        return updated;
-      });
-    });
+          return updated
+        })
+      },
+      onError: (err) => console.error("WebSocket error:", err),
+    })
+
+    ws.joinChannel()
 
     return () => {
-      channel.leave();
-      socket.disconnect();
-    };
-  }, [jobId]);
-
+      ws.leaveChannel()
+      ws.disconnect()
+    }
+  }, [jobId])
 
   useMemo(() => {
     if (!candidates) return
@@ -128,10 +91,7 @@ function JobShow() {
     setSortedCandidates(sorted)
   }, [candidates])
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
-  )
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event
@@ -307,15 +267,15 @@ function JobShow() {
           onDragEnd={handleDragEnd}
         >
           <Flex gap={10}>
-            {COLUMNS.map(column => (
-              <SortableContext key={column} items={sortedCandidates[column]?.map(c => c.id) || []}>
+            {COLUMNS.map((column) => (
+              <SortableContext key={column} items={sortedCandidates[column]?.map((c) => c.id) || []}>
                 <JobStatus column={column} candidates={sortedCandidates[column] || []} />
               </SortableContext>
             ))}
           </Flex>
           <DragOverlay>
             {activeCandidate && (
-              <div style={{ padding: 10, backgroundColor: 'white', borderRadius: 4 }}>
+              <div style={{ padding: 10, backgroundColor: "white", borderRadius: 4 }}>
                 {activeCandidate.email}
               </div>
             )}
