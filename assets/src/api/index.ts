@@ -3,10 +3,15 @@ type Job = {
   name: string
 }
 
+export type Column = {
+  id: string
+  name: string
+}
+
 export type Candidate = {
   id: number
   email: string
-  status: 'new' | 'interview' | 'hired' | 'rejected'
+  column_id: string
   position: number
 }
 
@@ -23,26 +28,30 @@ export const getJob = async (jobId?: string): Promise<Job | null> => {
   return data
 }
 
-export const getCandidates = async (jobId?: string): Promise<Candidate[]> => {
-  if (!jobId) return []
-  const response = await fetch(`http://localhost:4000/api/jobs/${jobId}/candidates`)
+export const getColumns = async (): Promise<Column[]> => {
+  const response = await fetch(`http://localhost:4000/api/columns`)
   const { data } = await response.json()
   return data
 }
 
-/**
- * Updates a candidate's status and position.
- *
- * @param jobId - The ID of the job of the candidate.
- * @param candidateId - The ID of the candidate to update.
- * @param updates - An object containing the updated fields (e.g., status and position).
- * @returns The updated candidate.
- */
+// Fetch candidates by column
+export const getCandidates = async (
+  jobId: string,
+  columnId: string,
+  page: number
+): Promise<{ candidates: Candidate[]; hasMore: boolean }> => {
+  const response = await fetch(
+    `http://localhost:4000/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${page}`
+  )
+  const { data } = await response.json()
+  return data
+}
 
+// Update candidate (same logic)
 export const updateCandidate = async (
   jobId: string,
   candidateId: number,
-  updates: { candidate: Partial<Pick<Candidate, 'status' | 'position'>> }
+  updates: { candidate: Partial<Pick<Candidate, 'column_id' | 'position'>> }
 ): Promise<Candidate> => {
   const response = await fetch(
     `http://localhost:4000/api/jobs/${jobId}/candidates/${candidateId}`,
@@ -53,12 +62,12 @@ export const updateCandidate = async (
       },
       body: JSON.stringify(updates), // Send the "candidate" key in the payload
     }
-  );
+  )
 
   if (!response.ok) {
-    throw new Error(`Failed to update candidate with ID ${candidateId}`);
+    throw new Error(`Failed to update candidate with ID ${candidateId}`)
   }
 
-  const { data } = await response.json();
-  return data;
+  const { data } = await response.json()
+  return data
 }

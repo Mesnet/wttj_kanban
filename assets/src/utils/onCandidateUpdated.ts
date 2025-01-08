@@ -1,42 +1,43 @@
 import { Candidate } from "../api"
 
-type Statuses = "new" | "interview" | "hired" | "rejected"
-
-interface SortedCandidates {
-  [key: string]: Candidate[]
+interface ColumnState {
+  [key: string]: {
+    items: Candidate[];
+    hasMore: boolean;
+    page: number;
+  };
 }
 
 interface OnCandidateUpdatedParams {
   payload: {
     id: number
     position: number
-    status: Statuses
+    column_id: string
   }
-  setSortedCandidates: React.Dispatch<React.SetStateAction<SortedCandidates>>
+  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>
 }
 
 export const onCandidateUpdated = ({
   payload,
-  setSortedCandidates,
+  setColumns,
 }: OnCandidateUpdatedParams): void => {
-  const { id, position, status } = payload
+  const { id, position, column_id } = payload
 
-  setSortedCandidates((prev) => {
+  setColumns((prev) => {
     const updated = { ...prev }
     let fromColumn: string | null = null
 
     // Find and remove the candidate from the old column
     for (const column of Object.keys(updated)) {
-      const candidates = updated[column] || []
+      const candidates = updated[column]?.items || []
       const index = candidates.findIndex((c) => c.id === id)
       if (index !== -1) {
         const [candidate] = candidates.splice(index, 1)
         fromColumn = column
         if (candidate) {
-          candidate.status = status
+          candidate.column_id = column_id
           candidate.position = position
-          if (!updated[status]) updated[status] = []
-          updated[status].splice(position, 0, candidate)
+          updated[column_id].items.splice(position, 0, candidate)
         }
         break
       }
@@ -44,15 +45,15 @@ export const onCandidateUpdated = ({
 
     // Reindex the "from" column
     if (fromColumn && Array.isArray(updated[fromColumn])) {
-      updated[fromColumn] = updated[fromColumn].map((candidate, idx) => ({
+      updated[fromColumn].items = updated[fromColumn].items.map((candidate, idx) => ({
         ...candidate,
         position: idx,
       }))
     }
 
     // Reindex the "to" column
-    if (Array.isArray(updated[status])) {
-      updated[status] = updated[status].map((candidate, idx) => ({
+    if (Array.isArray(updated[column_id])) {
+      updated[column_id].items = updated[column_id].map((candidate, idx) => ({
         ...candidate,
         position: idx,
       }))

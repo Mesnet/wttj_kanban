@@ -1,40 +1,63 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useJob, useCandidates, useUpdateCandidate } from "../../hooks"
+import { useJob, useUpdateCandidate } from "../../hooks"
 import { Text } from "@welcome-ui/text"
 import { Flex } from "@welcome-ui/flex"
 import { Box } from "@welcome-ui/box"
 import { Candidate } from "../../api"
 import JobStatus from "../../components/JobStatus"
 import CandidateCard from "../../components/Candidate"
-import { DndContext, closestCorners, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import {
+  DndContext,
+  closestCorners,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
 import { SortableContext } from "@dnd-kit/sortable"
 import { JobWebSocket } from "../../utils/websocket"
 import { onCandidateUpdated } from "../../utils/onCandidateUpdated"
 import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 
-type Statuses = "new" | "interview" | "hired" | "rejected"
-const COLUMNS: Statuses[] = ["new", "interview", "hired", "rejected"]
-
-interface SortedCandidates {
-  [key: string]: Candidate[]
+interface ColumnState {
+  [key: string]: {
+    items: Candidate[];
+    hasMore: boolean;
+    page: number;
+  };
 }
 
 function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
-  const { candidates } = useCandidates(jobId)
   const updateCandidate = useUpdateCandidate()
-  const [sortedCandidates, setSortedCandidates] = useState<SortedCandidates>({})
+  const [columns, setColumns] = useState<ColumnState>({})
 
   useEffect(() => {
-    if (!jobId) return
+    // Fetch dynamic columns and initialize state
+    const fetchColumns = async () => {
+      const response = await fetch("/api/columns")
+      const { data } = await response.json()
+      const initialState = data.reduce((acc: ColumnState, column: { id: string }) => {
+        acc[column.id] = { items: [], hasMore: true, page: 1 }
+        return acc
+      }, {})
+      setColumns(initialState)
+    }
+
+    fetchColumns()
+  }, [])
+
+  useEffect(() => {
+    if (!jobId || !columns) return
 
     const ws = new JobWebSocket({
       jobId,
       token: "your-secret-token",
       onCandidateUpdated: (payload) => {
-        onCandidateUpdated({ payload: { ...payload, status: payload.status as Statuses }, setSortedCandidates })
+        onCandidateUpdated({ payload, setColumns })
       },
       onError: (err) => console.error("WebSocket error:", err),
     })
@@ -47,19 +70,10 @@ function JobShow() {
     }
   }, [jobId])
 
-  useMemo(() => {
-    if (!candidates) return
-    const sorted = candidates.reduce<SortedCandidates>((acc, c: Candidate) => {
-      acc[c.status] = [...(acc[c.status] || []), c].sort((a, b) => a.position - b.position)
-      return acc
-    }, {})
-    setSortedCandidates(sorted)
-  }, [candidates])
-
   const updateCandidateBackend = (
     jobId: string,
     candidateId: number,
-    updates: Partial<Pick<Candidate, "status" | "position">>
+    updates: Partial<Pick<Candidate, "column_id" | "position">>
   ) => {
     if (!jobId) {
       console.error("Job ID is undefined. Cannot update candidate.")
@@ -69,13 +83,31 @@ function JobShow() {
     updateCandidate.mutate({
       jobId,
       candidateId,
-      updates: { candidate: updates }, // Wrap updates under the "candidate" key
+      updates: { candidate: updates },
     })
   }
 
+  const fetchCandidatesForColumn = async (columnId: string) => {
+    if (!columns[columnId]?.hasMore) return
+
+    const response = await fetch(
+      `/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${columns[columnId].page}`
+    )
+    const { data, hasMore } = await response.json()
+
+    setColumns((prev) => ({
+      ...prev,
+      [columnId]: {
+        items: [...prev[columnId].items, ...data],
+        hasMore,
+        page: prev[columnId].page + 1,
+      },
+    }))
+  }
+
   const { activeCandidate: dragActiveCandidate, handleDragStart, handleDragEnd } = useDragAndDrop({
-    sortedCandidates,
-    setSortedCandidates,
+    columns,
+    setColumns,
     updateCandidateBackend,
     jobId: jobId!,
   })
@@ -97,9 +129,17 @@ function JobShow() {
           onDragEnd={handleDragEnd}
         >
           <Flex gap={10}>
-            {COLUMNS.map((column) => (
-              <SortableContext key={column} items={sortedCandidates[column]?.map((c) => c.id) || []}>
-                <JobStatus column={column} candidates={sortedCandidates[column] || []} />
+            {Object.keys(columns).map((columnId) => (
+              <SortableContext
+                key={columnId}
+                items={columns[columnId]?.items.map((c) => c.id) || []}
+              >
+                <JobStatus
+                  column={columnId}
+                  candidates={columns[columnId]?.items || []}
+                  hasMore={columns[columnId]?.hasMore}
+                  onFetchMore={() => fetchCandidatesForColumn(columnId)}
+                />
               </SortableContext>
             ))}
           </Flex>

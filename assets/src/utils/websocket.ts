@@ -3,7 +3,7 @@ import { Socket, Channel } from "phoenix"
 type CandidateUpdatedPayload = {
   id: number
   position: number
-  status: string // Adjust the type as necessary for your statuses
+  column_id: string
 }
 
 type WebSocketConfig = {
@@ -35,6 +35,7 @@ export class JobWebSocket {
       })
 
     this.channel.on("candidate_updated", (payload: CandidateUpdatedPayload) => {
+      console.log("Real-time update received:", payload)
       this.config.onCandidateUpdated(payload)
     })
   }

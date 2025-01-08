@@ -1,6 +1,14 @@
-import { useQuery, useMutation } from 'react-query'
-import { getCandidates, getJob, getJobs, updateCandidate, Candidate } from '../api'
+import { useQuery, useMutation, useInfiniteQuery } from "react-query"
+import {
+  getCandidates,
+  getJob,
+  getJobs,
+  getColumns,
+  updateCandidate,
+  Candidate,
+} from "../api"
 
+// Fetch all jobs
 export const useJobs = () => {
   const { isLoading, error, data } = useQuery({
     queryKey: ['jobs'],
@@ -20,16 +28,40 @@ export const useJob = (jobId?: string) => {
   return { isLoading, error, job: data }
 }
 
-export const useCandidates = (jobId?: string) => {
+// Fetch all columns
+export const useColumns = () => {
   const { isLoading, error, data } = useQuery({
-    queryKey: ['candidates', jobId],
-    queryFn: () => getCandidates(jobId),
-    enabled: !!jobId,
+    queryKey: ["columns"],
+    queryFn: getColumns,
   })
 
-  return { isLoading, error, candidates: data }
+  return { isLoading, error, columns: data }
 }
 
+// Fetch candidates for a specific column with pagination
+export const useCandidates = (jobId: string, columnId: string) => {
+  const { data, fetchNextPage, hasNextPage, isFetching, isLoading, error } =
+    useInfiniteQuery({
+      queryKey: ["candidates", jobId, columnId],
+      queryFn: ({ pageParam = 1 }) => getCandidates(jobId, columnId, pageParam),
+      getNextPageParam: (lastPage) => {
+        // Determine if there are more pages to fetch
+        return lastPage.hasMore ? lastPage.page + 1 : undefined
+      },
+      enabled: !!jobId && !!columnId,
+    })
+
+  return {
+    candidates: data?.pages.flatMap((page) => page.candidates) || [],
+    fetchNextPage,
+    hasNextPage,
+    isFetching,
+    isLoading,
+    error,
+  }
+}
+
+// Update a candidate
 export const useUpdateCandidate = () => {
   const mutation = useMutation({
     mutationFn: ({
@@ -37,14 +69,14 @@ export const useUpdateCandidate = () => {
       candidateId,
       updates,
     }: {
-      jobId: string;
-      candidateId: number;
-      updates: { candidate: Partial<Pick<Candidate, 'status' | 'position'>> };
+      jobId: string
+      candidateId: number
+      updates: { candidate: Partial<Pick<Candidate, "column_id" | "position">> }
     }) => updateCandidate(jobId, candidateId, updates),
     onError: (error) => {
-      console.error('Error updating candidate:', error);
+      console.error("Error updating candidate:", error)
     },
-  });
+  })
 
-  return mutation;
-};
+  return mutation
+}

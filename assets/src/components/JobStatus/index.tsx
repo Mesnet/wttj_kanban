@@ -7,7 +7,14 @@ import { Candidate } from '../../api'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-function JobStatus({ column, candidates }: { column: string; candidates: Candidate[] }) {
+type JobStatusProps = {
+  column: string
+  candidates: Candidate[]
+  onFetchMore: () => void
+  hasMore: boolean
+}
+
+function JobStatus({ column, candidates, onFetchMore, hasMore }: JobStatusProps) {
   const { setNodeRef } = useDroppable({
     id: `column_${column}`,
   })
@@ -35,10 +42,13 @@ function JobStatus({ column, candidates }: { column: string; candidates: Candida
         <Badge>{candidates.length}</Badge>
       </Flex>
       <SortableContext items={candidates.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-        <Flex ref={setNodeRef} direction="column" p={10} pb={0} style={{ height: '100%' }}>
-          {candidates.map((candidate: Candidate) => (
+        <Flex ref={setNodeRef} direction="column">
+          {candidates.map((candidate) => (
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
+          {hasMore && (
+            <button onClick={onFetchMore}>Load More</button>
+          )}
         </Flex>
       </SortableContext>
     </Box>

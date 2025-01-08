@@ -2,26 +2,28 @@ import { useState } from "react"
 import { arrayMove } from "@dnd-kit/sortable"
 import { Candidate } from "../api"
 
-type Statuses = "new" | "interview" | "hired" | "rejected"
-
-interface SortedCandidates {
-  [key: string]: Candidate[]
+interface ColumnState {
+  [key: string]: {
+    items: Candidate[]
+    hasMore: boolean
+    page: number
+  }
 }
 
 interface UseDragAndDropConfig {
-  sortedCandidates: SortedCandidates
-  setSortedCandidates: React.Dispatch<React.SetStateAction<SortedCandidates>>
+  columns: ColumnState
+  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>
   updateCandidateBackend: (
     jobId: string,
     candidateId: number,
-    updates: Partial<Pick<Candidate, "status" | "position">>
+    updates: Partial<Pick<Candidate, "column_id" | "position">>
   ) => void
   jobId: string
 }
 
 export function useDragAndDrop({
-  sortedCandidates,
-  setSortedCandidates,
+  columns,
+  setColumns,
   updateCandidateBackend,
   jobId,
 }: UseDragAndDropConfig) {
@@ -35,12 +37,14 @@ export function useDragAndDrop({
 
     if (activeElementType !== "item") return
 
-    const currentColumn = Object.keys(sortedCandidates).find((column) =>
-      sortedCandidates[column].find((candidate) => candidate.id === Number(activeElementId))
+    const currentColumn = Object.keys(columns).find((column) =>
+      columns[column].items.find(
+        (candidate) => candidate.id === Number(activeElementId)
+      )
     )
 
     if (currentColumn) {
-      const candidate = sortedCandidates[currentColumn].find(
+      const candidate = columns[currentColumn].items.find(
         (c) => c.id === Number(activeElementId)
       )
       setActiveCandidate(candidate || null)
@@ -66,7 +70,10 @@ export function useDragAndDrop({
     }
 
     const sourceColumn = findColumnByItemId(Number(activeElementId))
-    const destinationColumn = findDestinationColumn(overElementType, overElementId)
+    const destinationColumn = findDestinationColumn(
+      overElementType,
+      overElementId
+    )
 
     if (!sourceColumn || !destinationColumn) {
       setActiveCandidate(null)
@@ -74,7 +81,11 @@ export function useDragAndDrop({
     }
 
     if (sourceColumn === destinationColumn) {
-      handleReorderWithinColumn(sourceColumn, Number(activeElementId), Number(overElementId))
+      handleReorderWithinColumn(
+        sourceColumn,
+        Number(activeElementId),
+        Number(overElementId)
+      )
     } else {
       handleMoveBetweenColumns(
         sourceColumn,
@@ -89,8 +100,8 @@ export function useDragAndDrop({
   }
 
   const findColumnByItemId = (itemId: number): string | undefined => {
-    return Object.keys(sortedCandidates).find((column) =>
-      sortedCandidates[column].find((candidate) => candidate.id === itemId)
+    return Object.keys(columns).find((column) =>
+      columns[column].items.find((candidate) => candidate.id === itemId)
     )
   }
 
@@ -99,8 +110,10 @@ export function useDragAndDrop({
     overElementId: string
   ): string | undefined => {
     if (overElementType === "column") return overElementId
-    return Object.keys(sortedCandidates).find((column) =>
-      sortedCandidates[column].find((candidate) => candidate.id === Number(overElementId))
+    return Object.keys(columns).find((column) =>
+      columns[column].items.find(
+        (candidate) => candidate.id === Number(overElementId)
+      )
     )
   }
 
@@ -108,21 +121,28 @@ export function useDragAndDrop({
     return items.map((item, index) => ({ ...item, position: index }))
   }
 
-  const handleReorderWithinColumn = (column: string, activeId: number, overId: number) => {
-    const items = [...sortedCandidates[column]]
+  const handleReorderWithinColumn = (
+    column: string,
+    activeId: number,
+    overId: number
+  ) => {
+    const items = [...columns[column].items]
     const activeIndex = items.findIndex((candidate) => candidate.id === activeId)
     const overIndex = items.findIndex((candidate) => candidate.id === overId)
 
     const updatedItems = arrayMove(items, activeIndex, overIndex)
 
-    setSortedCandidates({
-      ...sortedCandidates,
-      [column]: reindexedItems(updatedItems),
-    })
+    setColumns((prev) => ({
+      ...prev,
+      [column]: {
+        ...prev[column],
+        items: reindexedItems(updatedItems),
+      },
+    }))
 
     updateCandidateBackend(jobId, activeId, {
       position: overIndex,
-      status: column as Statuses,
+      column_id: column,
     })
   }
 
@@ -133,32 +153,40 @@ export function useDragAndDrop({
     overElementType: string,
     overElementId: number
   ) => {
-    const sourceItems = sortedCandidates[sourceColumn].filter(
+    const sourceItems = columns[sourceColumn].items.filter(
       (candidate) => candidate.id !== activeId
     )
-    const movedItem = sortedCandidates[sourceColumn].find(
+    const movedItem = columns[sourceColumn].items.find(
       (candidate) => candidate.id === activeId
     )!
-    const destinationItems = [...(sortedCandidates[destinationColumn] || [])]
+    const destinationItems = [...columns[destinationColumn].items]
 
     let overIndex: number = destinationItems.length
 
     if (overElementType === "item") {
-      overIndex = destinationItems.findIndex((candidate) => candidate.id === overElementId)
+      overIndex = destinationItems.findIndex(
+        (candidate) => candidate.id === overElementId
+      )
       destinationItems.splice(overIndex, 0, movedItem)
     } else {
       destinationItems.push(movedItem)
     }
 
-    setSortedCandidates({
-      ...sortedCandidates,
-      [sourceColumn]: reindexedItems(sourceItems),
-      [destinationColumn]: reindexedItems(destinationItems),
-    })
+    setColumns((prev) => ({
+      ...prev,
+      [sourceColumn]: {
+        ...prev[sourceColumn],
+        items: reindexedItems(sourceItems),
+      },
+      [destinationColumn]: {
+        ...prev[destinationColumn],
+        items: reindexedItems(destinationItems),
+      },
+    }))
 
     updateCandidateBackend(jobId, activeId, {
       position: overIndex,
-      status: destinationColumn as Statuses,
+      column_id: destinationColumn,
     })
   }
 
