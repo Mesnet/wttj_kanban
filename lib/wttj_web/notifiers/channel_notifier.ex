@@ -4,11 +4,11 @@ defmodule WttjWeb.ChannelNotifier do
   @doc """
   Broadcasts a candidate update to the `job:{job_id}` channel.
   """
-  def broadcast_candidate_update(%{id: id, position: position, status: status, job_id: job_id}) do
+  def broadcast_candidate_update(%{id: id, position: position, column_id: column_id, job_id: job_id}) do
     Endpoint.broadcast("job:#{job_id}", "candidate_updated", %{
       id: id,
       position: position,
-      status: status
+      column_id: column_id
     })
   end
 end

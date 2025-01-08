@@ -5,11 +5,11 @@ defmodule WttjWeb.JobChannel do
     {:ok, %{message: "Connected to job #{job_id}"}, assign(socket, :job_id, job_id)}
   end
 
-  def handle_in("update_candidate", %{"id" => id, "position" => position, "status" => status}, socket) do
+  def handle_in("update_candidate", %{"id" => id, "position" => position, "column_id" => column_id}, socket) do
     broadcast!(socket, "candidate_updated", %{
       id: id,
       position: position,
-      status: status
+      column_id: column_id
     })
 
     {:noreply, socket}

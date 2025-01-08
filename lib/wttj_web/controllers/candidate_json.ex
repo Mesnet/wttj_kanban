@@ -19,7 +19,7 @@ defmodule WttjWeb.CandidateJSON do
     %{
       id: candidate.id,
       email: candidate.email,
-      status: candidate.status,
+      column_id: candidate.column_id,
       position: candidate.position
     }
   end
