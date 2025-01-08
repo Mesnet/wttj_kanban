@@ -97,20 +97,18 @@ function JobShow() {
   // Fetch candidates for a column
   const fetchCandidatesForColumn = async (columnId: string) => {
     if (!columns[columnId]?.hasMore) return
-
-    console.log("Fetching more candidates for column", columnId)
     try {
       const response = await fetch(
         `/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${columns[columnId].page}`
       )
-      const { data, hasMore } = await response.json()
+      const { results, pagination } = await response.json()
 
       setColumns((prev) => ({
         ...prev,
         [columnId]: {
-          items: [...prev[columnId].items, ...data],
-          hasMore,
-          page: prev[columnId].page + 1,
+          items: [...prev[columnId].items, ...results],
+          hasMore: pagination.total_pages > pagination.current_page,
+          page: pagination.current_page + 1,
           name: prev[columnId].name
         },
       }))

@@ -6,8 +6,8 @@ defmodule WttjWeb.CandidateController do
 
   action_fallback WttjWeb.FallbackController
 
-  def index(conn, %{"job_id" => job_id}) do
-    candidates = Candidates.list_candidates(job_id)
+  def index(conn, %{"job_id" => job_id, "column_id" => column_id, "page" => page}) do
+    candidates = Candidates.list_candidates(job_id, column_id, page)
     render(conn, :index, candidates: candidates)
   end
 

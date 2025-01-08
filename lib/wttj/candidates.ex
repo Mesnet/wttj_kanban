@@ -7,6 +7,7 @@ defmodule Wttj.Candidates do
   alias Wttj.Repo
 
   alias Wttj.Candidates.{Candidate, CandidateService}
+  alias Wttj.Helpers.PaginationHelper
 
   @doc """
   Returns the list of candidates.
@@ -17,9 +18,15 @@ defmodule Wttj.Candidates do
       [%Candidate{}, ...]
 
   """
-  def list_candidates(job_id) do
-    query = from c in Candidate, where: c.job_id == ^job_id
-    Repo.all(query)
+
+  def list_candidates(job_id, column_id, page \\ 1) do
+
+    query =
+      Candidate
+      |> where([c], c.job_id == ^job_id and c.column_id == ^column_id)
+      |> order_by([c], asc: :position)
+
+    PaginationHelper.paginate(query, page)
   end
 
   @doc """

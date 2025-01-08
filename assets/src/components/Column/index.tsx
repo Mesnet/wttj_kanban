@@ -47,7 +47,9 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
           {candidates.map((candidate) => (
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
-          <button onClick={onFetchMore}>Load More</button>
+          {hasMore && (
+            <button onClick={onFetchMore}>Load More</button>
+          )}
         </Flex>
       </SortableContext>
     </Box>

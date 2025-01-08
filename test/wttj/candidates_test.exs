@@ -28,7 +28,7 @@ defmodule Wttj.CandidatesTest do
       candidate1 = candidate_fixture(%{job_id: job1.id, column_id: new_column.id})
       _ = candidate_fixture(%{job_id: job2.id, column_id: new_column.id})
 
-      assert Candidates.list_candidates(job1.id) == [candidate1]
+      assert Candidates.list_candidates(job1.id, new_column.id, 1).results == [candidate1]
     end
 
     test "create_candidate/1 with valid data creates a candidate", %{job1: job1, columns: [new_column | _]} do

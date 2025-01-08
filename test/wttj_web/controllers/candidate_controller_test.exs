@@ -14,9 +14,17 @@ defmodule WttjWeb.CandidateControllerTest do
   end
 
   describe "index" do
-    test "lists all candidates", %{conn: conn, job: job} do
-      conn = get(conn, ~p"/api/jobs/#{job}/candidates")
-      assert json_response(conn, 200)["data"] == []
+    test "lists all candidates", %{conn: conn, job: job, column: column} do
+      conn = get(conn, ~p"/api/jobs/#{job}/candidates?column_id=#{column.id}&page=1")
+
+      assert json_response(conn, 200) == %{
+        "results" => [],
+        "pagination" => %{
+          "total_pages" => 0,
+          "total_count" => 0,
+          "current_page" => 1
+        }
+      }
     end
   end
 
