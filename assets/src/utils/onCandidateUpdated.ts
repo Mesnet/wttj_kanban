@@ -5,6 +5,7 @@ interface ColumnState {
     items: Candidate[];
     hasMore: boolean;
     page: number;
+    name: string;
   };
 }
 

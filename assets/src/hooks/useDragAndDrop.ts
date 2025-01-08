@@ -6,7 +6,8 @@ interface ColumnState {
   [key: string]: {
     items: Candidate[]
     hasMore: boolean
-    page: number
+    page: number;
+    name: string;
   }
 }
 

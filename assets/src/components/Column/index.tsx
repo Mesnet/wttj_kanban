@@ -7,21 +7,22 @@ import { Candidate } from '../../api'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
-type JobStatusProps = {
-  column: string
+type ColumnProps = {
+  columnId: string,
+  columnName: string,
   candidates: Candidate[]
   onFetchMore: () => void
   hasMore: boolean
 }
 
-function JobStatus({ column, candidates, onFetchMore, hasMore }: JobStatusProps) {
+function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: ColumnProps) {
   const { setNodeRef } = useDroppable({
-    id: `column_${column}`,
+    id: `column_${columnId}`,
   })
 
   return (
     <Box
-      key={column}
+      key={columnId}
       w={300}
       border={1}
       backgroundColor="white"
@@ -37,7 +38,7 @@ function JobStatus({ column, candidates, onFetchMore, hasMore }: JobStatusProps)
         justify="space-between"
       >
         <Text color="black" m={0} textTransform="capitalize">
-          {column}
+          {columnName}
         </Text>
         <Badge>{candidates.length}</Badge>
       </Flex>
@@ -46,13 +47,11 @@ function JobStatus({ column, candidates, onFetchMore, hasMore }: JobStatusProps)
           {candidates.map((candidate) => (
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
-          {hasMore && (
-            <button onClick={onFetchMore}>Load More</button>
-          )}
+          <button onClick={onFetchMore}>Load More</button>
         </Flex>
       </SortableContext>
     </Box>
   )
 }
 
-export default JobStatus
+export default Column
