@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useJob, useUpdateCandidate, useCreateColumn, useCandidates } from "../../hooks"
+import { useJob, useUpdateCandidate, useCreateColumn, useCandidates, useUpdateColumn, useDeleteColumn } from "../../hooks"
 import { Text } from "@welcome-ui/text"
 import { Flex } from "@welcome-ui/flex"
 import { Box } from "@welcome-ui/box"
-import { Candidate, ColumnState } from "../../types"
+import { Candidate, Column, ColumnState } from "../../types"
 
-import Column from "../../components/Column"
+import ColumnShow from "../../components/ColumnShow"
 import CandidateCard from "../../components/Candidate"
 import ColumnNew from "../../components/ColumnNew"
 import {
@@ -32,6 +32,8 @@ function JobShow() {
   const [columns, setColumns] = useState<ColumnState>({})
   const [columnsFetched, setColumnsFetched] = useState(false)
   const fetchCandidates = useCandidates(setColumns, columns);
+  const updateColumn = useUpdateColumn()
+  const deleteColumn = useDeleteColumn()
 
   // Fetch columns and initialize state
   useEffect(() => {
@@ -123,6 +125,37 @@ function JobShow() {
     }
   }
 
+  const handleUpdateColumn = async (
+    columnId: string,
+    updates: Partial<Pick<Column, "name">>
+  ) => {
+    try {
+      const column = await updateColumn.mutateAsync({
+        columnId,
+        updates
+      })
+
+      console.log("Updated column:", column)
+
+      setColumns((prev) => ({
+        ...prev,
+        [columnId]: { ...prev[columnId], name: column.name },
+      }))
+    } catch (error) {
+      console.error("Error updating column:", error)
+    }
+  }
+
+  const handleDeleteColumn = async (columnId: string) => {
+    try {
+      await deleteColumn.mutateAsync(columnId)
+      const { [columnId]: _, ...rest } = columns
+      setColumns(rest)
+    } catch (error) {
+      console.error("Error deleting column:", error)
+    }
+  }
+
   const { activeCandidate: dragActiveCandidate, handleDragStart, handleDragEnd } = useDragAndDrop({
     columns,
     setColumns,
@@ -160,12 +193,14 @@ function JobShow() {
                 key={columnId}
                 items={columns[columnId]?.items.map((c) => c.id) || []}
               >
-                <Column
+                <ColumnShow
                   columnId={columnId}
                   columnName={columns[columnId].name}
                   candidates={columns[columnId].items || []}
                   hasMore={columns[columnId].hasMore}
                   onFetchMore={() => fetchCandidatesForColumn(columnId)}
+                  onColumnUpdate={(columnId, updates) => handleUpdateColumn(columnId, updates)}
+                  onDeleteColumn={() => handleDeleteColumn(columnId)}
                 />
               </SortableContext>
             ))}

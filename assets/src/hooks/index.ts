@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "react-query"
-import { Candidate, ColumnState } from "../types"
+import { Candidate, ColumnState, Column } from "../types"
 import {
   getCandidates,
   getJob,
@@ -7,7 +7,8 @@ import {
   getColumns,
   createColumn,
   updateCandidate,
-  deleteColumn
+  deleteColumn,
+  updateColumn
 } from "../api"
 
 // Fetch all jobs
@@ -51,15 +52,43 @@ export const useCreateColumn = () => {
   return mutation
 }
 
+export const useUpdateColumn = () => {
+  return useMutation<
+    Column,
+    Error,
+    { columnId: string; updates: Partial<Pick<Column, "name">> }
+  >(
+    async ({ columnId, updates }) => {
+      return updateColumn(columnId, updates)
+    },
+    {
+      onError: (error) => {
+        console.error("Error updating column:", error.message)
+      },
+    }
+  )
+}
+
+// Delete a column
+export const useDeleteColumn = () => {
+  const mutation = useMutation((columnId: string) => deleteColumn(columnId), {
+    onError: (error) => {
+      console.error('Error deleting column:', error)
+    },
+  })
+
+  return mutation
+}
+
 export const useCandidates = (
   setColumns: React.Dispatch<React.SetStateAction<ColumnState>>,
   columns: ColumnState
 ) => {
   return useMutation(
     async ({ jobId, columnId }: { jobId: string; columnId: string }) => {
-      const page = columns[columnId]?.page || 1;
-      const { candidates, pagination } = await getCandidates(jobId, columnId, page);
-      return { columnId, candidates, pagination };
+      const page = columns[columnId]?.page || 1
+      const { candidates, pagination } = await getCandidates(jobId, columnId, page)
+      return { columnId, candidates, pagination }
     },
     {
       onSuccess: ({ columnId, candidates, pagination }) => {
@@ -72,14 +101,14 @@ export const useCandidates = (
             page: pagination.current_page + 1,
             name: prev[columnId]?.name,
           },
-        }));
+        }))
       },
       onError: (error, { columnId }) => {
-        console.error(`Error fetching candidates for column ${columnId}:`, error);
+        console.error(`Error fetching candidates for column ${columnId}:`, error)
       },
     }
-  );
-};
+  )
+}
 
 
 // Update a candidate

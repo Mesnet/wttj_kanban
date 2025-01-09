@@ -36,6 +36,36 @@ export const createColumn = async (name: string): Promise<Column> => {
   return data
 }
 
+export const updateColumn = async (
+  columnId: string,
+  updates: Partial<Pick<Column, "name">>
+): Promise<Column> => {
+  const response = await fetch(`/api/columns/${columnId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ column: updates }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update column with id: ${columnId}`);
+  }
+
+  const data = await response.json();
+  return data.data
+}
+
+export const deleteColumn = async (columnId: string): Promise<void> => {
+  const response = await fetch(`http://localhost:4000/api/columns/${columnId}`, {
+    method: 'DELETE',
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete column with ID ${columnId}`)
+  }
+}
+
 // Fetch candidates by column
 export const getCandidates = async (
   jobId: string,
