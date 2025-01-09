@@ -1,104 +1,138 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { onCandidateUpdated } from "./onCandidateUpdated";
-import { Candidate } from "../api";
-
-type Statuses = "new" | "interview" | "hired" | "rejected";
+// onCandidateUpdated.spec.ts
+import { describe, it, expect, vi, beforeEach } from "vitest"
+import { onCandidateUpdated } from "./onCandidateUpdated"
+import { Candidate } from "../api"
+import React from "react"
 
 describe("onCandidateUpdated", () => {
-  let setSortedCandidates: ReturnType<typeof vi.fn>;
-  let initialCandidates: Record<string, Candidate[]>;
+  let columns: Record<
+    string,
+    { items: Candidate[]; hasMore: boolean; page: number; name: string }
+  >
+  let setColumns: React.Dispatch<React.SetStateAction<typeof columns>>
 
   beforeEach(() => {
-    setSortedCandidates = vi.fn();
-    initialCandidates = {
-      new: [
-        { id: 1, email: "candidate1@test.com", status: "new", position: 0 },
-        { id: 2, email: "candidate2@test.com", status: "new", position: 1 },
-      ],
-      interview: [
-        { id: 3, email: "candidate3@test.com", status: "interview", position: 0 },
-      ],
-      hired: [],
-      rejected: [],
-    };
-  });
+    columns = {
+      "1": {
+        items: [
+          { id: 1, email: "candidate1@test.com", position: 0, column_id: "1" },
+          { id: 2, email: "candidate2@test.com", position: 1, column_id: "1" },
+        ],
+        hasMore: true,
+        page: 1,
+        name: "New",
+      },
+      "2": {
+        items: [
+          { id: 3, email: "candidate3@test.com", position: 0, column_id: "2" },
+        ],
+        hasMore: true,
+        page: 1,
+        name: "Interview",
+      },
+      "3": { items: [], hasMore: true, page: 1, name: "Hired" },
+      "4": { items: [], hasMore: true, page: 1, name: "Rejected" },
+    }
 
-  it("moves a candidate within the same column", () => {
-    const payload = { id: 1, position: 1, status: "new" as Statuses };
+    // Mock setColumns to capture the updater function calls
+    setColumns = vi.fn()
+  })
 
-    onCandidateUpdated({ payload, setSortedCandidates });
+  it("moves a candidate from one column to another at the correct position", () => {
+    const payload = {
+      id: 1,
+      position: 1,
+      column_id: "2", // Move candidate #1 to column "2" at position 1
+    }
 
-    // Call the function passed to setSortedCandidates
-    expect(setSortedCandidates).toHaveBeenCalledWith(expect.any(Function));
+    onCandidateUpdated({ payload, setColumns })
 
-    const updatedState = setSortedCandidates.mock.calls[0][0](initialCandidates);
+    // We expect setColumns to have been called exactly once
+    expect(setColumns).toHaveBeenCalledTimes(1)
 
-    expect(updatedState.new).toEqual([
-      { id: 2, email: "candidate2@test.com", status: "new", position: 0 },
-      { id: 1, email: "candidate1@test.com", status: "new", position: 1 },
-    ]);
-  });
+    // Retrieve the actual update function passed to setColumns
+    const updateFn = setColumns.mock.calls[0][0]
 
-  it("moves a candidate to a different column", () => {
-    const payload = { id: 1, position: 0, status: "interview" as Statuses };
+    // Execute that function with our initial columns to see the final result
+    const updatedColumns = updateFn(columns)
 
-    onCandidateUpdated({ payload, setSortedCandidates });
+    // Candidate #1 should no longer be in column "1"
+    expect(updatedColumns["1"].items).toEqual([
+      { id: 2, email: "candidate2@test.com", position: 0, column_id: "1" },
+    ])
 
-    expect(setSortedCandidates).toHaveBeenCalledWith(expect.any(Function));
+    // Candidate #1 should now appear in column "2" at position 1
+    expect(updatedColumns["2"].items).toEqual([
+      { id: 3, email: "candidate3@test.com", position: 0, column_id: "2" },
+      { id: 1, email: "candidate1@test.com", position: 1, column_id: "2" },
+    ])
+  })
 
-    const updatedState = setSortedCandidates.mock.calls[0][0](initialCandidates);
+  it("reindexes the 'from' column correctly after removal", () => {
+    const payload = {
+      id: 2,
+      position: 0,
+      column_id: "2", // Move candidate #2 from column "1" -> column "2" at pos 0
+    }
 
-    expect(updatedState.new).toEqual([
-      { id: 2, email: "candidate2@test.com", status: "new", position: 0 },
-    ]);
-    expect(updatedState.interview).toEqual([
-      { id: 1, email: "candidate1@test.com", status: "interview", position: 0 },
-      { id: 3, email: "candidate3@test.com", status: "interview", position: 1 },
-    ]);
-  });
+    onCandidateUpdated({ payload, setColumns })
 
-  it("updates the 'from' column when it becomes empty", () => {
-    const payload = { id: 3, position: 0, status: "hired" as Statuses };
+    const updateFn = setColumns.mock.calls[0][0]
+    const updatedColumns = updateFn(columns)
 
-    onCandidateUpdated({ payload, setSortedCandidates });
+    // Column "1" after removal of #2 should have only #1 at position=0
+    expect(updatedColumns["1"].items).toEqual([
+      { id: 1, email: "candidate1@test.com", position: 0, column_id: "1" },
+    ])
 
-    expect(setSortedCandidates).toHaveBeenCalledWith(expect.any(Function));
+    // Column "2":
+    // Candidate #2 should end up at position=0
+    // Candidate #3 reindexed to position=1
+    expect(updatedColumns["2"].items).toEqual([
+      { id: 2, email: "candidate2@test.com", position: 0, column_id: "2" },
+      { id: 3, email: "candidate3@test.com", position: 1, column_id: "2" },
+    ])
+  })
 
-    const updatedState = setSortedCandidates.mock.calls[0][0](initialCandidates);
+  it("reindexes the 'to' column if the candidate moves into it", () => {
+    const payload = {
+      id: 3,
+      position: 0,
+      column_id: "1", // Move candidate #3 from column "2" -> column "1" at pos 0
+    }
 
-    expect(updatedState.interview).toEqual([]);
-    expect(updatedState.hired).toEqual([
-      { id: 3, email: "candidate3@test.com", status: "hired", position: 0 },
-    ]);
-  });
+    onCandidateUpdated({ payload, setColumns })
 
-  it("reindexes positions in the 'from' and 'to' columns", () => {
-    const payload = { id: 2, position: 0, status: "interview" as Statuses };
+    const updateFn = setColumns.mock.calls[0][0]
+    const updatedColumns = updateFn(columns)
 
-    onCandidateUpdated({ payload, setSortedCandidates });
+    // Column "2" becomes empty
+    expect(updatedColumns["2"].items).toEqual([])
 
-    expect(setSortedCandidates).toHaveBeenCalledWith(expect.any(Function));
+    // Column "1" now has #3 at position=0, then #1 at position=1, then #2 at position=2
+    expect(updatedColumns["1"].items).toEqual([
+      { id: 3, email: "candidate3@test.com", position: 0, column_id: "1" },
+      { id: 1, email: "candidate1@test.com", position: 1, column_id: "1" },
+      { id: 2, email: "candidate2@test.com", position: 2, column_id: "1" },
+    ])
+  })
 
-    const updatedState = setSortedCandidates.mock.calls[0][0](initialCandidates);
+  it("does nothing if the candidate is not found in any column", () => {
+    const payload = {
+      id: 999,
+      position: 0,
+      column_id: "1",
+    }
 
-    expect(updatedState.new).toEqual([
-      { id: 1, email: "candidate1@test.com", status: "new", position: 0 },
-    ]);
-    expect(updatedState.interview).toEqual([
-      { id: 2, email: "candidate2@test.com", status: "interview", position: 0 },
-      { id: 3, email: "candidate3@test.com", status: "interview", position: 1 },
-    ]);
-  });
+    onCandidateUpdated({ payload, setColumns })
 
-  it("does not modify state if the candidate is not found", () => {
-    const payload = { id: 99, position: 0, status: "new" as Statuses };
+    // If candidate is not found, setColumns still called but updates do nothing
+    expect(setColumns).toHaveBeenCalledTimes(1)
 
-    onCandidateUpdated({ payload, setSortedCandidates });
+    const updateFn = setColumns.mock.calls[0][0]
+    const updatedColumns = updateFn(columns)
 
-    expect(setSortedCandidates).toHaveBeenCalledWith(expect.any(Function));
-
-    const updatedState = setSortedCandidates.mock.calls[0][0](initialCandidates);
-
-    expect(updatedState).toEqual(initialCandidates);
-  });
-});
+    // Expect columns to remain unchanged
+    expect(updatedColumns).toEqual(columns)
+  })
+})

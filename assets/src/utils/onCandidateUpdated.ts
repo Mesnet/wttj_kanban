@@ -27,38 +27,33 @@ export const onCandidateUpdated = ({
   setColumns((prev) => {
     const updated = { ...prev }
     let fromColumn: string | null = null
-
-    // Find and remove the candidate from the old column
     for (const column of Object.keys(updated)) {
-      const candidates = updated[column]?.items || []
-      const index = candidates.findIndex((c) => c.id === id)
-      if (index !== -1) {
-        const [candidate] = candidates.splice(index, 1)
+      const idx = updated[column].items.findIndex((c) => c.id === id)
+      if (idx !== -1) {
         fromColumn = column
-        if (candidate) {
-          candidate.column_id = column_id
-          candidate.position = position
-          updated[column_id].items.splice(position, 0, candidate)
-        }
+        const [candidate] = updated[column].items.splice(idx, 1)
+        // update candidate props
+        candidate.position = position
+        candidate.column_id = column_id
+        // splice into the “to” column
+        updated[column_id].items.splice(position, 0, candidate)
         break
       }
     }
 
-    // Reindex the "from" column
-    if (fromColumn && Array.isArray(updated[fromColumn])) {
-      updated[fromColumn].items = updated[fromColumn].items.map((candidate, idx) => ({
-        ...candidate,
-        position: idx,
+    // 3) Reindex the "from" column
+    if (fromColumn) {
+      updated[fromColumn].items = updated[fromColumn].items.map((c, i) => ({
+        ...c,
+        position: i,
       }))
     }
 
-    // Reindex the "to" column
-    if (Array.isArray(updated[column_id])) {
-      updated[column_id].items = updated[column_id].map((candidate, idx) => ({
-        ...candidate,
-        position: idx,
-      }))
-    }
+    // 4) Reindex the "to" column
+    updated[column_id].items = updated[column_id].items.map((c, i) => ({
+      ...c,
+      position: i,
+    }))
 
     return updated
   })
