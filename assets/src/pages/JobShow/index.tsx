@@ -25,8 +25,8 @@ interface ColumnState {
   [key: string]: {
     items: Candidate[]
     hasMore: boolean
-    page: number;
-    name: string;
+    page: number
+    name: string
   }
 }
 
@@ -53,7 +53,7 @@ function JobShow() {
         )
 
         setColumns(initialState)
-        setColumnsFetched(true);
+        setColumnsFetched(true)
       } catch (error) {
         console.error("Error fetching columns:", error)
       }
@@ -85,14 +85,11 @@ function JobShow() {
 
   useEffect(() => {
     if (columnsFetched) {
-      console.log("Columns have been fetched and initialized:", columns);
-      // Fetch candidates for each column if needed
       Object.keys(columns).forEach((columnId) => {
-        fetchCandidatesForColumn(columnId);
-      });
+        fetchCandidatesForColumn(columnId)
+      })
     }
-  }, [columnsFetched]);
-
+  }, [columnsFetched])
 
   // Fetch candidates for a column
   const fetchCandidatesForColumn = async (columnId: string) => {

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { Flex } from '@welcome-ui/flex'
 import { Box } from '@welcome-ui/box'
 import { Text } from '@welcome-ui/text'
@@ -7,52 +7,27 @@ import { Badge } from '@welcome-ui/badge'
 import { Candidate } from '../../api'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll' // Import the new hook
 
 type ColumnProps = {
-  columnId: string,
-  columnName: string,
+  columnId: string
+  columnName: string
   candidates: Candidate[]
   onFetchMore: () => void
   hasMore: boolean
 }
 
 function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: ColumnProps) {
-  const { setNodeRef } = useDroppable({
-    id: `column_${columnId}`,
-  })
+  const { setNodeRef } = useDroppable({ id: `column_${columnId}` })
+  const scrollableRef = useRef<HTMLDivElement>(null)
 
-  const scrollableRef = useRef<HTMLDivElement>(null);
-
-  // Function to handle scroll detection
-  const handleScroll = () => {
-    const element = scrollableRef.current;
-    if (element) {
-      const isBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
-      if (isBottom && hasMore) {
-        onFetchMore()
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (!hasMore) return
-
-    const element = scrollableRef.current
-    if (element) {
-      element.addEventListener('scroll', handleScroll)
-    }
-    return () => {
-      if (element) {
-        element.removeEventListener('scroll', handleScroll)
-      }
-    }
-  }, [hasMore]) // Reapply event listener if cooldown changes
+  useInfiniteScroll({ containerRef: scrollableRef, hasMore, onFetchMore })
 
   // Merge refs
   const mergedRef = (node: HTMLDivElement) => {
     setNodeRef(node)
     scrollableRef.current = node
-  };
+  }
 
   return (
     <Box
@@ -77,7 +52,7 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
         <Badge>{candidates.length}</Badge>
       </Flex>
       <SortableContext items={candidates.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-      <Flex
+        <Flex
           ref={mergedRef} // Use the merged ref here
           direction="column"
           p={10}
