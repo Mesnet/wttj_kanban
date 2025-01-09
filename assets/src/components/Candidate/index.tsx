@@ -23,7 +23,11 @@ function CandidateCard({ candidate, isOverlay }: CandidateCardProps) {
       {...(isOverlay ? {} : listeners)}
       {...(isOverlay ? {} : attributes)}
       mb={10}
-      style={style}
+      style={{
+        ...style,
+        height: "auto",
+        minHeight: "50px",
+      }}
     >
       <Card.Body>{candidate.email}</Card.Body>
     </Card>

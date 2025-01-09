@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import { Flex } from '@welcome-ui/flex'
 import { Box } from '@welcome-ui/box'
 import { Text } from '@welcome-ui/text'
@@ -19,6 +20,39 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
   const { setNodeRef } = useDroppable({
     id: `column_${columnId}`,
   })
+
+  const scrollableRef = useRef<HTMLDivElement>(null);
+
+  // Function to handle scroll detection
+  const handleScroll = () => {
+    const element = scrollableRef.current;
+    if (element) {
+      const isBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+      if (isBottom && hasMore) {
+        onFetchMore()
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!hasMore) return
+
+    const element = scrollableRef.current
+    if (element) {
+      element.addEventListener('scroll', handleScroll)
+    }
+    return () => {
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+    }
+  }, [hasMore]) // Reapply event listener if cooldown changes
+
+  // Merge refs
+  const mergedRef = (node: HTMLDivElement) => {
+    setNodeRef(node)
+    scrollableRef.current = node
+  };
 
   return (
     <Box
@@ -43,13 +77,20 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
         <Badge>{candidates.length}</Badge>
       </Flex>
       <SortableContext items={candidates.map((c) => c.id)} strategy={verticalListSortingStrategy}>
-        <Flex ref={setNodeRef} direction="column">
+      <Flex
+          ref={mergedRef} // Use the merged ref here
+          direction="column"
+          p={10}
+          pb={0}
+          style={{
+            height: '100%',
+            maxHeight: 'calc(100vh - 205px)',
+            overflowY: 'auto',
+          }}
+        >
           {candidates.map((candidate) => (
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
-          {hasMore && (
-            <button onClick={onFetchMore}>Load More</button>
-          )}
         </Flex>
       </SortableContext>
     </Box>
