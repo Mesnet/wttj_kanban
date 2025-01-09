@@ -4,6 +4,7 @@ import {
   getJob,
   getJobs,
   getColumns,
+  createColumn,
   updateCandidate,
   Candidate,
 } from "../api"
@@ -38,16 +39,23 @@ export const useColumns = () => {
   return { isLoading, error, columns: data }
 }
 
+// Create a new column
+export const useCreateColumn = () => {
+  const mutation = useMutation((name: string) => createColumn(name), {
+    onError: (error) => {
+      console.error('Error creating column:', error)
+    },
+  })
+
+  return mutation;
+}
+
 // Fetch candidates for a specific column with pagination
 export const useCandidates = (jobId: string, columnId: string) => {
   const { data, fetchNextPage, hasNextPage, isFetching, isLoading, error } =
     useInfiniteQuery({
       queryKey: ["candidates", jobId, columnId],
       queryFn: ({ pageParam = 1 }) => getCandidates(jobId, columnId, pageParam),
-      getNextPageParam: (lastPage) => {
-        // Determine if there are more pages to fetch
-        return lastPage.hasMore ? lastPage.page + 1 : undefined
-      },
       enabled: !!jobId && !!columnId,
     })
 

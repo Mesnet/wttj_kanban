@@ -15,6 +15,27 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.24"
 
+"@ariakit/core@0.4.14":
+  version "0.4.14"
+  resolved "https://registry.yarnpkg.com/@ariakit/core/-/core-0.4.14.tgz#a8bbefbc80a1781ae739bdf25a4fd9130fbd5089"
+  integrity sha512-hpzZvyYzGhP09S9jW1XGsU/FD5K3BKsH1eG/QJ8rfgEeUdPS7BvHPt5lHbOeJ2cMrRzBEvsEzLi1ivfDifHsVA==
+
+"@ariakit/react-core@0.4.15":
+  version "0.4.15"
+  resolved "https://registry.yarnpkg.com/@ariakit/react-core/-/react-core-0.4.15.tgz#333b9ee0f4c12d3b76db06e2d787987c1e3fae27"
+  integrity sha512-Up8+U97nAPJdyUh9E8BCEhJYTA+eVztWpHoo1R9zZfHd4cnBWAg5RHxEmMH+MamlvuRxBQA71hFKY/735fDg+A==
+  dependencies:
+    "@ariakit/core" "0.4.14"
+    "@floating-ui/dom" "^1.0.0"
+    use-sync-external-store "^1.2.0"
+
+"@ariakit/react@0.4.15":
+  version "0.4.15"
+  resolved "https://registry.yarnpkg.com/@ariakit/react/-/react-0.4.15.tgz#d088faf0e98e59542f3c23c348b6e923a6054208"
+  integrity sha512-0V2LkNPFrGRT+SEIiObx/LQjR6v3rR+mKEDUu/3tq7jfCZ+7+6Q6EMR1rFaK+XMkaRY1RWUcj/rRDWAUWnsDww==
+  dependencies:
+    "@ariakit/react-core" "0.4.15"
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.25.9", "@babel/code-frame@^7.26.0":
   version "7.26.0"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.26.0.tgz#9374b5cd068d128dac0b94ff482594273b1c2815"
@@ -1295,6 +1316,26 @@
   dependencies:
     levn "^0.4.1"
 
+"@floating-ui/core@^1.6.0":
+  version "1.6.9"
+  resolved "https://registry.yarnpkg.com/@floating-ui/core/-/core-1.6.9.tgz#64d1da251433019dafa091de9b2886ff35ec14e6"
+  integrity sha512-uMXCuQ3BItDUbAMhIXw7UPXRfAlOAvZzdK9BWpE60MCn+Svt3aLn9jsPTi/WNGlRUu2uI0v5S7JiIUsbsvh3fw==
+  dependencies:
+    "@floating-ui/utils" "^0.2.9"
+
+"@floating-ui/dom@^1.0.0":
+  version "1.6.13"
+  resolved "https://registry.yarnpkg.com/@floating-ui/dom/-/dom-1.6.13.tgz#a8a938532aea27a95121ec16e667a7cbe8c59e34"
+  integrity sha512-umqzocjDgNRGTuO7Q8CU32dkHkECqI8ZdMZ5Swb6QAM0t5rnlrN3lGo1hdpscRd3WS8T6DKYK4ephgIH9iRh3w==
+  dependencies:
+    "@floating-ui/core" "^1.6.0"
+    "@floating-ui/utils" "^0.2.9"
+
+"@floating-ui/utils@^0.2.9":
+  version "0.2.9"
+  resolved "https://registry.yarnpkg.com/@floating-ui/utils/-/utils-0.2.9.tgz#50dea3616bc8191fb8e112283b49eaff03e78429"
+  integrity sha512-MDWhGtE+eHw5JW7lq4qhc5yRLS11ERl1c7Z6Xd0a58DozHES6EnNNwUWbMiG4J9Cgj053Bhk8zvlhFYKVhULwg==
+
 "@humanfs/core@^0.19.1":
   version "0.19.1"
   resolved "https://registry.yarnpkg.com/@humanfs/core/-/core-0.19.1.tgz#17c55ca7d426733fe3c561906b8173c336b40a77"
@@ -2003,6 +2044,24 @@
   dependencies:
     "@welcome-ui/system" "^6.0.0"
 
+"@welcome-ui/box@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/box/-/box-6.1.1.tgz#1617dbe21e64993057b272034e282b7e9ee9f4e2"
+  integrity sha512-+R4al4uUNZuo6q6DP70LvXNe82uFP7Hzm9I6K9GpVp/lc52nnLqoKjr/GIzRnc24cwgCZSz1qH2HS7xh+FK7ig==
+  dependencies:
+    "@welcome-ui/system" "^6.1.1"
+
+"@welcome-ui/button@^6.0.0", "@welcome-ui/button@^6.6.0":
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/button/-/button-6.6.0.tgz#3228e0c64a982494b7b836fda1c6b9f3d63e1e6e"
+  integrity sha512-jd3pJrJ/KnYcmN5LER+MkrDce6DG58VgKEc4v0Vp4yoOmjooIwF5ymsv9hED2/Ci3zjT/efzB+kbmgGVDwA9oQ==
+  dependencies:
+    "@ariakit/react" "0.4.15"
+    "@welcome-ui/box" "^6.1.1"
+    "@welcome-ui/loader" "^6.4.0"
+    "@welcome-ui/system" "^6.1.1"
+    "@welcome-ui/utils" "^6.4.0"
+
 "@welcome-ui/card@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/card/-/card-6.0.0.tgz#6dadd873c0f6bc380806a37e333fe107eaa2118c"
@@ -2013,6 +2072,15 @@
     "@welcome-ui/system" "^6.0.0"
     "@welcome-ui/utils" "^6.0.0"
 
+"@welcome-ui/clear-button@^6.6.0":
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/clear-button/-/clear-button-6.6.0.tgz#4523142bc8be57bfd3a21f970feb8357a5c5cba5"
+  integrity sha512-+Jex5inLuneMZw6XzWvseeh6bRFuqEQrocV3t5Y6wFKWJz1oZUZm+5NxdpBkTbbKZog0yjuUA6a33iSVlN/2XQ==
+  dependencies:
+    "@welcome-ui/button" "^6.6.0"
+    "@welcome-ui/icons" "^6.5.0"
+    "@welcome-ui/system" "^6.1.1"
+
 "@welcome-ui/core@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/core/-/core-6.0.0.tgz#bab5de37019b1af04ad17ed40d50ae1b192ee2f4"
@@ -2020,6 +2088,17 @@
   dependencies:
     "@welcome-ui/utils" "^6.0.0"
     ramda "^0.30.1"
+
+"@welcome-ui/field@^6.5.0":
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/field/-/field-6.5.0.tgz#44501bfb1da2d727e7dd4bdf4242d1f5c4889b03"
+  integrity sha512-Y53W72zSd7qCW/gli9jBbQhnoEPPWpURcWgncoInF3M1V/fWlT3LyFljSKesXho6dKi31dkxKdWCaffh3o9bLA==
+  dependencies:
+    "@welcome-ui/hint" "^6.1.1"
+    "@welcome-ui/label" "^6.5.0"
+    "@welcome-ui/system" "^6.1.1"
+    "@welcome-ui/utils" "^6.4.0"
+    "@welcome-ui/variant-icon" "^6.5.0"
 
 "@welcome-ui/flex@^6.0.0":
   version "6.0.0"
@@ -2029,6 +2108,13 @@
     "@welcome-ui/box" "^6.0.0"
     "@welcome-ui/system" "^6.0.0"
 
+"@welcome-ui/hint@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/hint/-/hint-6.1.1.tgz#84d60bd5291c65ed44e2184c9c62d9cceb41c8ca"
+  integrity sha512-uDb/L2pPd91qEZp1JW/QCOHiiSoeF7AGi77M0I5KO6OjjAyWbfIqq71gNMbd3ys9LKqZ1wDAnEQATS9JB5XXjg==
+  dependencies:
+    "@welcome-ui/system" "^6.1.1"
+
 "@welcome-ui/icon@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/icon/-/icon-6.0.0.tgz#01be3e4be6a5be949617afbfc9712bcdb95b97ca"
@@ -2036,12 +2122,46 @@
   dependencies:
     "@welcome-ui/system" "^6.0.0"
 
+"@welcome-ui/icon@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/icon/-/icon-6.1.1.tgz#cb7f038946e85081f8239b9fce1645811dee14fa"
+  integrity sha512-DAkmfV2UNmdGVDgEcq185+SIm2S5o6ykOSz1ITNHlg5YGzq5OMBNuDXr0MUw6bJNwOUCSSZlMqgsg1Wn8QJkbQ==
+  dependencies:
+    "@welcome-ui/system" "^6.1.1"
+
 "@welcome-ui/icons@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/icons/-/icons-6.0.0.tgz#911e47e1c8a368e8a21d9b96699ef1721101e796"
   integrity sha512-h34lMB8hT0TVYsVp3lQOtDnuAdsy/fJHeWFtn4GvbFCWta4keBQ7whhOqjf10776dZ3+pz4wkMVIIffrbYZ8IQ==
   dependencies:
     "@welcome-ui/icon" "^6.0.0"
+
+"@welcome-ui/icons@^6.5.0":
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/icons/-/icons-6.5.0.tgz#737b95ac85d64cf018c80d78c4ffd4410eac7e10"
+  integrity sha512-gbobfjeMxv3HDV9sff7Q4tbI5+5z62JSi0sLl7Kx7qJwvyYWJrmgoNBSF8rBZlDJdg5t70MWQ3pzGORViqjJ3Q==
+  dependencies:
+    "@welcome-ui/icon" "^6.1.1"
+
+"@welcome-ui/input-text@^6.0.0":
+  version "6.6.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/input-text/-/input-text-6.6.0.tgz#8276224408d3e1ec90e954b8da4c0cb3bc006ed9"
+  integrity sha512-eySCnDaYPCuR+QgEWyfT5KGOWxyhtNxusMdFpT8cB1IH0j9QIrbMli1PfImGwqIlDDKXCekkP1tqpy+egrdVog==
+  dependencies:
+    "@welcome-ui/clear-button" "^6.6.0"
+    "@welcome-ui/field" "^6.5.0"
+    "@welcome-ui/system" "^6.1.1"
+    "@welcome-ui/utils" "^6.4.0"
+
+"@welcome-ui/label@^6.5.0":
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/label/-/label-6.5.0.tgz#379d0810cdfacad7da2e6ab01d79d90512ae5083"
+  integrity sha512-A474kOqGVExKbe0IGwV8+MhnYrGGS/gF+Ul+g9A8LgcQMtKMAHizvV5Aa8mqdtE3pteqXaXP9DI0Y01sKf+n0g==
+  dependencies:
+    "@welcome-ui/icons" "^6.5.0"
+    "@welcome-ui/system" "^6.1.1"
+    "@welcome-ui/utils" "^6.4.0"
+    "@welcome-ui/variant-icon" "^6.5.0"
 
 "@welcome-ui/link@^6.0.0":
   version "6.0.0"
@@ -2052,6 +2172,15 @@
     "@welcome-ui/system" "^6.0.0"
     "@welcome-ui/universal-link" "^6.0.0"
 
+"@welcome-ui/loader@^6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/loader/-/loader-6.4.0.tgz#059dc609aff3f8e930888ddf74ba3aaacc6c02c6"
+  integrity sha512-NnA0Fj+MoXnwVyaUXYpP9NK408IpgWfvVyAD2Vo4mmIvtfdDOuFMINZlNDQHYQ65kwGyF3WDdN4RuNZ7ku/aXQ==
+  dependencies:
+    "@welcome-ui/box" "^6.1.1"
+    "@welcome-ui/shape" "^6.4.0"
+    "@welcome-ui/system" "^6.1.1"
+
 "@welcome-ui/shape@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/shape/-/shape-6.0.0.tgz#810864236abdc7e2e98165d8bc89338e73be1398"
@@ -2061,10 +2190,24 @@
     "@welcome-ui/system" "^6.0.0"
     "@welcome-ui/utils" "^6.0.0"
 
+"@welcome-ui/shape@^6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/shape/-/shape-6.4.0.tgz#f6b18e2fa83c1e6a8da9dcff3792608bc93e0fe1"
+  integrity sha512-Ezj9TDIQA5UNpE5DO9bd2ivcJGhuJT/xhzvYWdok22NZ18mIX2oK3gPFegIDIe/SR+aSky2T28vSwou7wA5s0Q==
+  dependencies:
+    "@welcome-ui/box" "^6.1.1"
+    "@welcome-ui/system" "^6.1.1"
+    "@welcome-ui/utils" "^6.4.0"
+
 "@welcome-ui/system@^6.0.0":
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/system/-/system-6.0.0.tgz#113951aa50527afbb1274ac10be552712aa32002"
   integrity sha512-9tZgh9tSLr1Olz00DwOBZ3Qryz0ZpiCR76+hhHMqfNMKr782TC4US7cDHyuQ+fpYqcrYDGfNPlXGfURwS58E5Q==
+
+"@welcome-ui/system@^6.1.1":
+  version "6.1.1"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/system/-/system-6.1.1.tgz#90550037bef7e5381a83d4fef3bd99026abb3478"
+  integrity sha512-beYzunJi4QeFHROrcatuWctrzNP9Gd01bOLatJbx+NmxS9bi8kRqsURMMH47H8g1nqmMagFDZoZws3b0I4PMtQ==
 
 "@welcome-ui/tag@^6.0.0":
   version "6.0.0"
@@ -2095,6 +2238,19 @@
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/@welcome-ui/utils/-/utils-6.0.0.tgz#098e0b8cef105d691ed3c9a9f662a094922fd6db"
   integrity sha512-iX8nW4KV55D/K63WMXhWh1rWktGmUsYEHPUOdNI6zB5NpOUcPIN81GqEWQrSXls2VIsR5oLNWlG+ICuB3ECOqQ==
+
+"@welcome-ui/utils@^6.4.0":
+  version "6.4.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/utils/-/utils-6.4.0.tgz#6f2dfab13dc6aeb8339b5e42d773e7edd0e27ada"
+  integrity sha512-riVTjXXsd8KLDNEW74Zeq4hNYEls9tcjAgZzjhCnFRzpTxXeIRhDGDOVrKAcvWbjfcElagN0iovgtsfToI/shQ==
+
+"@welcome-ui/variant-icon@^6.5.0":
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/@welcome-ui/variant-icon/-/variant-icon-6.5.0.tgz#8582423c75f63637a8836ddf87b5e1c26c801f46"
+  integrity sha512-6ya+8/6wwW1u0rTdzVs1giSkEW2x1Ov+G4oJZB3vn7oVo+/+XyXbTzk5yfKSkHnfAEo7Hvy+wW03eoqjbCu63w==
+  dependencies:
+    "@welcome-ui/icons" "^6.5.0"
+    "@welcome-ui/system" "^6.1.1"
 
 "@xstyled/core@^3.8.1":
   version "3.8.1"
@@ -5400,6 +5556,11 @@ uri-js@^4.2.2:
   integrity sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==
   dependencies:
     punycode "^2.1.0"
+
+use-sync-external-store@^1.2.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.4.0.tgz#adbc795d8eeb47029963016cefdf89dc799fcebc"
+  integrity sha512-9WXSPC5fMv61vaupRkCKCxsPxBocVnwakBEkMIHHpkTTg6icbJtg6jzgtLDm4bl3cSHAca52rYWih0k4K3PfHw==
 
 util-deprecate@^1.0.2:
   version "1.0.2"

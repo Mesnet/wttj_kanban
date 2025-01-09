@@ -34,6 +34,23 @@ export const getColumns = async (): Promise<Column[]> => {
   return data
 }
 
+export const createColumn = async (name: string): Promise<Column> => {
+  const response = await fetch(`http://localhost:4000/api/columns`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ column: { name } }),
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to create column')
+  }
+
+  const { data } = await response.json()
+  return data
+}
+
 // Fetch candidates by column
 export const getCandidates = async (
   jobId: string,
@@ -47,7 +64,7 @@ export const getCandidates = async (
   return data
 }
 
-// Update candidate (same logic)
+// Update candidate
 export const updateCandidate = async (
   jobId: string,
   candidateId: number,

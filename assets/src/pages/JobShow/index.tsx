@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useJob, useUpdateCandidate } from "../../hooks"
+import { useJob, useUpdateCandidate, useCreateColumn } from "../../hooks"
 import { Text } from "@welcome-ui/text"
 import { Flex } from "@welcome-ui/flex"
 import { Box } from "@welcome-ui/box"
 import { Candidate } from "../../api"
 import Column from "../../components/Column"
 import CandidateCard from "../../components/Candidate"
+import ColumnNew from "../../components/ColumnNew"
 import {
   DndContext,
   closestCorners,
@@ -34,6 +35,7 @@ function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
   const updateCandidate = useUpdateCandidate()
+  const createColumnMutation = useCreateColumn()
   const [columns, setColumns] = useState<ColumnState>({})
   const [columnsFetched, setColumnsFetched] = useState(false)
 
@@ -131,6 +133,18 @@ function JobShow() {
     })
   }
 
+  const addColumn = async (columnName: string) => {
+    try {
+      const column = await createColumnMutation.mutateAsync(columnName);
+      setColumns((prev) => ({
+        ...prev,
+        [column.id]: { items: [], hasMore: false, page: 1, name: column.name },
+      }));
+    } catch (error) {
+      console.error('Error creating column:', error);
+    }
+  }
+
   const { activeCandidate: dragActiveCandidate, handleDragStart, handleDragEnd } = useDragAndDrop({
     columns,
     setColumns,
@@ -154,7 +168,15 @@ function JobShow() {
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
-          <Flex gap={10}>
+          <Flex
+            gap={10}
+            style={{
+              overflowX: "auto",
+              overflowY: "hidden",
+              whiteSpace: "nowrap",
+              padding: "10px 0",
+            }}
+          >
             {Object.keys(columns).map((columnId) => (
               <SortableContext
                 key={columnId}
@@ -169,6 +191,7 @@ function JobShow() {
                 />
               </SortableContext>
             ))}
+            <ColumnNew onAddColumn={addColumn} />
           </Flex>
           <DragOverlay>
             {dragActiveCandidate && (

@@ -32,12 +32,15 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
   return (
     <Box
       key={columnId}
-      w={300}
       border={1}
       backgroundColor="white"
       borderColor="neutral-30"
       borderRadius="md"
       overflow="hidden"
+      style={{
+				height: "fit-content",
+        minWidth: '300px'
+			}}
     >
       <Flex
         p={10}
@@ -49,8 +52,15 @@ function Column({ columnId, columnName, candidates, onFetchMore, hasMore }: Colu
         <Text color="black" m={0} textTransform="capitalize">
           {columnName}
         </Text>
-        <Badge>{candidates.length}</Badge>
+        <Badge>
+          {`${candidates.length}${hasMore ? '+' : ''}`}
+        </Badge>
       </Flex>
+      {!candidates.length && (
+        <Text color="neutral-500" textAlign="center" pt={10}>
+          No candidates yet
+        </Text>
+      )}
       <SortableContext items={candidates.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <Flex
           ref={mergedRef} // Use the merged ref here
