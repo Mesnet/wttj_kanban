@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useInfiniteQuery } from "react-query"
+import { useQuery, useMutation } from "react-query"
+import { Candidate, ColumnState } from "../types"
 import {
   getCandidates,
   getJob,
@@ -6,7 +7,7 @@ import {
   getColumns,
   createColumn,
   updateCandidate,
-  Candidate,
+  deleteColumn
 } from "../api"
 
 // Fetch all jobs
@@ -47,27 +48,39 @@ export const useCreateColumn = () => {
     },
   })
 
-  return mutation;
+  return mutation
 }
 
-// Fetch candidates for a specific column with pagination
-export const useCandidates = (jobId: string, columnId: string) => {
-  const { data, fetchNextPage, hasNextPage, isFetching, isLoading, error } =
-    useInfiniteQuery({
-      queryKey: ["candidates", jobId, columnId],
-      queryFn: ({ pageParam = 1 }) => getCandidates(jobId, columnId, pageParam),
-      enabled: !!jobId && !!columnId,
-    })
+export const useCandidates = (
+  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>,
+  columns: ColumnState
+) => {
+  return useMutation(
+    async ({ jobId, columnId }: { jobId: string; columnId: string }) => {
+      const page = columns[columnId]?.page || 1;
+      const { candidates, pagination } = await getCandidates(jobId, columnId, page);
+      return { columnId, candidates, pagination };
+    },
+    {
+      onSuccess: ({ columnId, candidates, pagination }) => {
+        setColumns((prev) => ({
+          ...prev,
+          [columnId]: {
+            ...prev[columnId],
+            items: [...(prev[columnId]?.items || []), ...candidates],
+            hasMore: pagination.total_pages > pagination.current_page,
+            page: pagination.current_page + 1,
+            name: prev[columnId]?.name,
+          },
+        }));
+      },
+      onError: (error, { columnId }) => {
+        console.error(`Error fetching candidates for column ${columnId}:`, error);
+      },
+    }
+  );
+};
 
-  return {
-    candidates: data?.pages.flatMap((page) => page.candidates) || [],
-    fetchNextPage,
-    hasNextPage,
-    isFetching,
-    isLoading,
-    error,
-  }
-}
 
 // Update a candidate
 export const useUpdateCandidate = () => {

@@ -1,7 +1,7 @@
 // onCandidateUpdated.spec.ts
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { onCandidateUpdated } from "./onCandidateUpdated"
-import { Candidate } from "../api"
+import { Candidate } from "../types"
 import React from "react"
 
 describe("onCandidateUpdated", () => {

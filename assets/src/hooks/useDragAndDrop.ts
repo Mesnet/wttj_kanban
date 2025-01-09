@@ -1,15 +1,6 @@
 import { useState } from "react"
 import { arrayMove } from "@dnd-kit/sortable"
-import { Candidate } from "../api"
-
-interface ColumnState {
-  [key: string]: {
-    items: Candidate[]
-    hasMore: boolean
-    page: number;
-    name: string;
-  }
-}
+import { Candidate, ColumnState } from "../types"
 
 interface UseDragAndDropConfig {
   columns: ColumnState

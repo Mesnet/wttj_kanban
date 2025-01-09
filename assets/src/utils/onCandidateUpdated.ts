@@ -1,13 +1,4 @@
-import { Candidate } from "../api"
-
-interface ColumnState {
-  [key: string]: {
-    items: Candidate[];
-    hasMore: boolean;
-    page: number;
-    name: string;
-  };
-}
+import { ColumnState } from "../types"
 
 interface OnCandidateUpdatedParams {
   payload: {

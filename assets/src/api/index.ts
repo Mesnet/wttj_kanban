@@ -1,19 +1,4 @@
-type Job = {
-  id: string
-  name: string
-}
-
-export type Column = {
-  id: string
-  name: string
-}
-
-export type Candidate = {
-  id: number
-  email: string
-  column_id: string
-  position: number
-}
+import { Job, Column, Candidate } from '../types';
 
 export const getJobs = async (): Promise<Job[]> => {
   const response = await fetch(`http://localhost:4000/api/jobs`)
@@ -56,13 +41,22 @@ export const getCandidates = async (
   jobId: string,
   columnId: string,
   page: number
-): Promise<{ candidates: Candidate[]; hasMore: boolean }> => {
+): Promise<{ candidates: Candidate[]; pagination: { total_pages: number; current_page: number } }> => {
   const response = await fetch(
-    `http://localhost:4000/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${page}`
-  )
-  const { data } = await response.json()
-  return data
-}
+    `/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${page}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch candidates for column ${columnId}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    candidates: data.results,
+    pagination: data.pagination,
+  };
+};
 
 // Update candidate
 export const updateCandidate = async (

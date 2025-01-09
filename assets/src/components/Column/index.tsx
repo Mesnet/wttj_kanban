@@ -4,7 +4,7 @@ import { Box } from '@welcome-ui/box'
 import { Text } from '@welcome-ui/text'
 import CandidateCard from '../../components/Candidate'
 import { Badge } from '@welcome-ui/badge'
-import { Candidate } from '../../api'
+import { Candidate } from '../../types'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll' // Import the new hook

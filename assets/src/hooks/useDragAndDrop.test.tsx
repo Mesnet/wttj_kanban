@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react-hooks"
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { useDragAndDrop } from "./useDragAndDrop"
-import { Candidate } from "../api"
+import { Candidate } from "../types"
 
 describe("useDragAndDrop", () => {
   let columns: Record<string, { items: Candidate[]; hasMore: boolean; page: number; name: string }>

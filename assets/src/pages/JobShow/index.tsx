@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useJob, useUpdateCandidate, useCreateColumn } from "../../hooks"
+import { useJob, useUpdateCandidate, useCreateColumn, useCandidates } from "../../hooks"
 import { Text } from "@welcome-ui/text"
 import { Flex } from "@welcome-ui/flex"
 import { Box } from "@welcome-ui/box"
-import { Candidate } from "../../api"
+import { Candidate, ColumnState } from "../../types"
+
 import Column from "../../components/Column"
 import CandidateCard from "../../components/Candidate"
 import ColumnNew from "../../components/ColumnNew"
@@ -22,22 +23,15 @@ import { JobWebSocket } from "../../utils/websocket"
 import { onCandidateUpdated } from "../../utils/onCandidateUpdated"
 import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 
-interface ColumnState {
-  [key: string]: {
-    items: Candidate[]
-    hasMore: boolean
-    page: number
-    name: string
-  }
-}
 
 function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
   const updateCandidate = useUpdateCandidate()
-  const createColumnMutation = useCreateColumn()
+  const createColumn = useCreateColumn()
   const [columns, setColumns] = useState<ColumnState>({})
   const [columnsFetched, setColumnsFetched] = useState(false)
+  const fetchCandidates = useCandidates(setColumns, columns);
 
   // Fetch columns and initialize state
   useEffect(() => {
@@ -66,7 +60,7 @@ function JobShow() {
 
   // WebSocket for real-time updates
   useEffect(() => {
-    if (!jobId || Object.keys(columns).length === 0) return
+    if (!jobId || !columnsFetched) return
 
     const ws = new JobWebSocket({
       jobId,
@@ -94,27 +88,11 @@ function JobShow() {
   }, [columnsFetched])
 
   // Fetch candidates for a column
-  const fetchCandidatesForColumn = async (columnId: string) => {
-    if (!columns[columnId]?.hasMore) return
-    try {
-      const response = await fetch(
-        `/api/jobs/${jobId}/candidates?column_id=${columnId}&page=${columns[columnId].page}`
-      )
-      const { results, pagination } = await response.json()
+  const fetchCandidatesForColumn = (columnId: string) => {
+    if (!jobId || !columns[columnId]?.hasMore) return
 
-      setColumns((prev) => ({
-        ...prev,
-        [columnId]: {
-          items: [...prev[columnId].items, ...results],
-          hasMore: pagination.total_pages > pagination.current_page,
-          page: pagination.current_page + 1,
-          name: prev[columnId].name
-        },
-      }))
-    } catch (error) {
-      console.error(`Error fetching candidates for column ${columnId}:`, error)
-    }
-  }
+    fetchCandidates.mutate({ jobId: jobId, columnId })
+  };
 
   const updateCandidateBackend = (
     jobId: string,
@@ -135,7 +113,7 @@ function JobShow() {
 
   const addColumn = async (columnName: string) => {
     try {
-      const column = await createColumnMutation.mutateAsync(columnName);
+      const column = await createColumn.mutateAsync(columnName);
       setColumns((prev) => ({
         ...prev,
         [column.id]: { items: [], hasMore: false, page: 1, name: column.name },
