@@ -87,6 +87,13 @@ export const getCandidates = async (
   };
 };
 
+export const getCandidate = async (jobId?: string, candidateId?: string): Promise<Candidate | null> => {
+  if (!jobId || !candidateId) return null
+  const response = await fetch(`http://localhost:4000/api/jobs/${jobId}/candidates/${candidateId}`)
+  const { data } = await response.json()
+  return data
+}
+
 // Update candidate
 export const updateCandidate = async (
   jobId: string,

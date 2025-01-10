@@ -1,14 +1,15 @@
 import { useQuery, useMutation } from "react-query"
 import { Candidate, ColumnState, Column } from "../types"
 import {
-  getCandidates,
   getJob,
   getJobs,
   getColumns,
   createColumn,
-  updateCandidate,
+  updateColumn,
   deleteColumn,
-  updateColumn
+  getCandidates,
+  getCandidate,
+  updateCandidate,
 } from "../api"
 
 // Fetch all jobs
@@ -79,6 +80,17 @@ export const useDeleteColumn = () => {
 
   return mutation
 }
+
+export const useCandidate = (jobId?: string, candidateId?: string) => {
+  const { isLoading, error, data } = useQuery({
+    queryKey: ['candidate', candidateId],
+    queryFn: () => getCandidate(jobId, candidateId),
+    enabled: !!candidateId,
+  })
+
+  return { isLoading, error, candidate: data }
+}
+
 
 export const useCandidates = (
   setColumnData: React.Dispatch<React.SetStateAction<ColumnState>>,
