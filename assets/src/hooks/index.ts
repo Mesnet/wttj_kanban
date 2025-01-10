@@ -81,27 +81,39 @@ export const useDeleteColumn = () => {
 }
 
 export const useCandidates = (
-  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>,
-  columns: ColumnState
+  setColumnData: React.Dispatch<React.SetStateAction<ColumnState>>,
+  columnData: ColumnState
 ) => {
   return useMutation(
     async ({ jobId, columnId }: { jobId: string; columnId: string }) => {
-      const page = columns[columnId]?.page || 1
+      const page = columnData[columnId]?.page || 1
       const { candidates, pagination } = await getCandidates(jobId, columnId, page)
       return { columnId, candidates, pagination }
     },
     {
       onSuccess: ({ columnId, candidates, pagination }) => {
-        setColumns((prev) => ({
-          ...prev,
-          [columnId]: {
-            ...prev[columnId],
-            items: [...(prev[columnId]?.items || []), ...candidates],
-            hasMore: pagination.total_pages > pagination.current_page,
-            page: pagination.current_page + 1,
-            name: prev[columnId]?.name,
-          },
-        }))
+        setColumnData((prev) => {
+          const existingCandidates = prev[columnId]?.items || []
+
+          // Filter out duplicates based on candidate ID
+          const newCandidates = candidates.filter(
+            (newCandidate) =>
+              !existingCandidates.some(
+                (existingCandidate) => existingCandidate.id === newCandidate.id
+              )
+          )
+
+          return {
+            ...prev,
+            [columnId]: {
+              ...prev[columnId],
+              items: [...existingCandidates, ...newCandidates],  // Avoid duplicates
+              hasMore: pagination.total_pages > pagination.current_page,
+              page: pagination.current_page + 1,
+              name: prev[columnId]?.name,
+            }
+          }
+        })
       },
       onError: (error, { columnId }) => {
         console.error(`Error fetching candidates for column ${columnId}:`, error)

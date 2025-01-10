@@ -36,22 +36,23 @@ import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 
 
 function JobShow() {
+  const [columnData, setColumnData] = useState<ColumnState>({})
+
   const { jobId } = useParams()
   const { job } = useJob(jobId)
-  const { isLoading, error, columns: fetchedColumns } = useColumns();
+  const { columns } = useColumns();
 
-  const updateCandidate = useUpdateCandidate()
   const createColumn = useCreateColumn()
-  const [columnData, setColumnData] = useState<ColumnState>({})
-  const [columnsFetched, setColumnsFetched] = useState(false)
-  const fetchCandidates = useCandidates(setColumnData, columnData);
   const updateColumn = useUpdateColumn()
   const deleteColumn = useDeleteColumn()
 
+  const updateCandidate = useUpdateCandidate()
+  const fetchCandidates = useCandidates(setColumnData, columnData);
+
   // Fetch columns and initialize state
   useEffect(() => {
-    if (fetchedColumns && !isLoading) {
-      const initialState = fetchedColumns.reduce(
+    if (columns) {
+      const initialState = columns.reduce(
         (acc: ColumnState, column: { id: string; name: string }) => {
           acc[column.id] = { items: [], hasMore: true, page: 1, name: column.name };
           return acc;
@@ -60,13 +61,12 @@ function JobShow() {
       );
 
       setColumnData(initialState);
-      setColumnsFetched(true);
     }
-  }, [fetchedColumns, isLoading]);
+  }, [columns]);
 
   // WebSocket for real-time updates
   useEffect(() => {
-    if (!jobId || !columnsFetched) return
+    if (!jobId || !Object.keys(columnData).length) return
 
     const ws = new JobWebSocket({
       jobId,
@@ -86,30 +86,25 @@ function JobShow() {
   }, [jobId, columnData])
 
   useEffect(() => {
-    if (columnsFetched) {
-      Object.keys(columnData).forEach((columnId) => {
-        fetchCandidatesForColumn(columnId)
-      })
-    }
-  }, [columnsFetched])
+    if (!Object.keys(columnData).length) return
+
+    Object.keys(columnData).forEach((columnId) => {
+      fetchCandidatesForColumn(columnId)
+    })
+  }, [Object.keys(columnData).length])
 
   // Fetch candidates for a column
   const fetchCandidatesForColumn = (columnId: string) => {
     if (!jobId || !columnData[columnId]?.hasMore) return
 
     fetchCandidates.mutate({ jobId: jobId, columnId })
-  };
+  }
 
   const updateCandidateBackend = (
     jobId: string,
     candidateId: number,
     updates: Partial<Pick<Candidate, "column_id" | "position">>
   ) => {
-    if (!jobId) {
-      console.error("Job ID is undefined. Cannot update candidate.")
-      return
-    }
-
     updateCandidate.mutate({
       jobId,
       candidateId,
