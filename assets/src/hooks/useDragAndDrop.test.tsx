@@ -4,18 +4,18 @@ import { useDragAndDrop } from "./useDragAndDrop"
 import { Candidate } from "../types"
 
 describe("useDragAndDrop", () => {
-  let columns: Record<string, { items: Candidate[]; hasMore: boolean; page: number; name: string }>
-  let setColumns: ReturnType<typeof vi.fn>
+  let columnData: Record<string, { items: Candidate[]; hasMore: boolean; page: number; name: string }>
+  let setColumnData: ReturnType<typeof vi.fn>
   let updateCandidateBackend: ReturnType<typeof vi.fn>
   let jobId: string
 
   beforeEach(() => {
     jobId = "1"
-    setColumns = vi.fn()
+    setColumnData = vi.fn()
     updateCandidateBackend = vi.fn()
 
-    columns = {
-      new: {
+    columnData = {
+      1: {
         items: [
           { id: 1, email: "candidate1@test.com", position: 0, column_id: "1" },
           { id: 2, email: "candidate2@test.com", position: 1, column_id: "1" },
@@ -24,7 +24,7 @@ describe("useDragAndDrop", () => {
         page: 1,
         name: "New",
       },
-      interview: {
+      2: {
         items: [{ id: 3, email: "candidate3@test.com", position: 0, column_id: "1" }],
         hasMore: true,
         page: 1,
@@ -38,8 +38,8 @@ describe("useDragAndDrop", () => {
   it("sets activeCandidate on drag start", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -62,8 +62,8 @@ describe("useDragAndDrop", () => {
   it("does not set activeCandidate for invalid drag start", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -81,8 +81,8 @@ describe("useDragAndDrop", () => {
   it("reorders candidates within the same column on drag end", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -95,26 +95,26 @@ describe("useDragAndDrop", () => {
       })
     })
 
-    expect(setColumns).toHaveBeenCalledWith(expect.any(Function))
-    const updateFn = setColumns.mock.calls[0][0]
-    const newColumns = updateFn(columns)
+    expect(setColumnData).toHaveBeenCalledWith(expect.any(Function))
+    const updateFn = setColumnData.mock.calls[0][0]
+    const newColumns = updateFn(columnData)
 
-    expect(newColumns.new.items).toEqual([
+    expect(newColumns[1].items).toEqual([
       { id: 2, email: "candidate2@test.com", position: 0, column_id: "1" },
       { id: 1, email: "candidate1@test.com", position: 1, column_id: "1" },
     ])
 
     expect(updateCandidateBackend).toHaveBeenCalledWith("1", 1, {
       position: 1,
-      column_id: "new",
+      column_id: "1",
     })
   })
 
-  it("moves candidates between columns on drag end", () => {
+  it("moves candidates between columnData on drag end", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -123,31 +123,31 @@ describe("useDragAndDrop", () => {
     act(() => {
       result.current.handleDragEnd({
         active: { id: "item_1" },
-        over: { id: "column_interview" },
+        over: { id: "column_2" },
       })
     })
 
-    expect(setColumns).toHaveBeenCalledWith(expect.any(Function))
-    const updateFn = setColumns.mock.calls[0][0]
-    const newColumns = updateFn(columns)
+    expect(setColumnData).toHaveBeenCalledWith(expect.any(Function))
+    const updateFn = setColumnData.mock.calls[0][0]
+    const newColumns = updateFn(columnData)
 
-    expect(newColumns.new.items).toEqual([{ id: 2, email: "candidate2@test.com", position: 0, "column_id": "1" }])
-    expect(newColumns.interview.items).toEqual([
+    expect(newColumns[1].items).toEqual([{ id: 2, email: "candidate2@test.com", position: 0, "column_id": "1" }])
+    expect(newColumns[2].items).toEqual([
       { id: 3, email: "candidate3@test.com", position: 0, "column_id": "1" },
       { id: 1, email: "candidate1@test.com", position: 1, "column_id": "1" },
     ])
 
     expect(updateCandidateBackend).toHaveBeenCalledWith("1", 1, {
       position: 1,
-      column_id: "interview",
+      column_id: "2",
     })
   })
 
   it("resets activeCandidate after drag end", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -166,8 +166,8 @@ describe("useDragAndDrop", () => {
   it("does nothing if over is null", () => {
     const { result } = renderHook(() =>
       useDragAndDrop({
-        columns,
-        setColumns,
+        columnData,
+        setColumnData,
         updateCandidateBackend,
         jobId,
       })
@@ -181,7 +181,7 @@ describe("useDragAndDrop", () => {
     })
 
     expect(result.current.activeCandidate).toBeNull()
-    expect(setColumns).not.toHaveBeenCalled()
+    expect(setColumnData).not.toHaveBeenCalled()
     expect(updateCandidateBackend).not.toHaveBeenCalled()
   })
 })
