@@ -53,7 +53,7 @@ export const updateColumn = async (
   }
 
   const data = await response.json();
-  return data.data
+  return data
 }
 
 export const deleteColumn = async (columnId: string): Promise<void> => {

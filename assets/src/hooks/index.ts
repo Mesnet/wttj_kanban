@@ -110,7 +110,6 @@ export const useCandidates = (
   )
 }
 
-
 // Update a candidate
 export const useUpdateCandidate = () => {
   const mutation = useMutation({

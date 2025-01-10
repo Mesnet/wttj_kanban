@@ -1,14 +1,24 @@
 import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
-import { useJob, useUpdateCandidate, useCreateColumn, useCandidates, useUpdateColumn, useDeleteColumn } from "../../hooks"
+
 import { Text } from "@welcome-ui/text"
 import { Flex } from "@welcome-ui/flex"
 import { Box } from "@welcome-ui/box"
+
 import { Candidate, Column, ColumnState } from "../../types"
+import { useJob,
+  useUpdateCandidate,
+  useColumns,
+  useCreateColumn,
+  useCandidates,
+  useUpdateColumn,
+  useDeleteColumn
+} from "../../hooks"
 
 import ColumnShow from "../../components/ColumnShow"
 import CandidateCard from "../../components/Candidate"
 import ColumnNew from "../../components/ColumnNew"
+
 import {
   DndContext,
   closestCorners,
@@ -19,6 +29,7 @@ import {
   useSensors,
 } from "@dnd-kit/core"
 import { SortableContext } from "@dnd-kit/sortable"
+
 import { JobWebSocket } from "../../utils/websocket"
 import { onCandidateUpdated } from "../../utils/onCandidateUpdated"
 import { useDragAndDrop } from "../../hooks/useDragAndDrop"
@@ -27,38 +38,31 @@ import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 function JobShow() {
   const { jobId } = useParams()
   const { job } = useJob(jobId)
+  const { isLoading, error, columns: fetchedColumns } = useColumns();
+
   const updateCandidate = useUpdateCandidate()
   const createColumn = useCreateColumn()
-  const [columns, setColumns] = useState<ColumnState>({})
+  const [columnData, setColumnData] = useState<ColumnState>({})
   const [columnsFetched, setColumnsFetched] = useState(false)
-  const fetchCandidates = useCandidates(setColumns, columns);
+  const fetchCandidates = useCandidates(setColumnData, columnData);
   const updateColumn = useUpdateColumn()
   const deleteColumn = useDeleteColumn()
 
   // Fetch columns and initialize state
   useEffect(() => {
-    const fetchColumns = async () => {
-      try {
-        const response = await fetch("/api/columns")
-        const { data } = await response.json()
+    if (fetchedColumns && !isLoading) {
+      const initialState = fetchedColumns.reduce(
+        (acc: ColumnState, column: { id: string; name: string }) => {
+          acc[column.id] = { items: [], hasMore: true, page: 1, name: column.name };
+          return acc;
+        },
+        {}
+      );
 
-        const initialState = data.reduce(
-          (acc: ColumnState, column: { id: string, name: string }) => {
-            acc[column.id] = { items: [], hasMore: true, page: 1, name: column.name }
-            return acc
-          },
-          {}
-        )
-
-        setColumns(initialState)
-        setColumnsFetched(true)
-      } catch (error) {
-        console.error("Error fetching columns:", error)
-      }
+      setColumnData(initialState);
+      setColumnsFetched(true);
     }
-
-    fetchColumns()
-  }, [])
+  }, [fetchedColumns, isLoading]);
 
   // WebSocket for real-time updates
   useEffect(() => {
@@ -68,7 +72,7 @@ function JobShow() {
       jobId,
       token: "your-secret-token",
       onCandidateUpdated: (payload) => {
-        onCandidateUpdated({ payload, setColumns })
+        onCandidateUpdated({ payload, setColumnData })
       },
       onError: (err) => console.error("WebSocket error:", err),
     })
@@ -79,11 +83,11 @@ function JobShow() {
       ws.leaveChannel()
       ws.disconnect()
     }
-  }, [jobId, columns])
+  }, [jobId, columnData])
 
   useEffect(() => {
     if (columnsFetched) {
-      Object.keys(columns).forEach((columnId) => {
+      Object.keys(columnData).forEach((columnId) => {
         fetchCandidatesForColumn(columnId)
       })
     }
@@ -91,7 +95,7 @@ function JobShow() {
 
   // Fetch candidates for a column
   const fetchCandidatesForColumn = (columnId: string) => {
-    if (!jobId || !columns[columnId]?.hasMore) return
+    if (!jobId || !columnData[columnId]?.hasMore) return
 
     fetchCandidates.mutate({ jobId: jobId, columnId })
   };
@@ -113,10 +117,10 @@ function JobShow() {
     })
   }
 
-  const addColumn = async (columnName: string) => {
+  const handleCreateColumn = async (columnName: string) => {
     try {
       const column = await createColumn.mutateAsync(columnName);
-      setColumns((prev) => ({
+      setColumnData((prev) => ({
         ...prev,
         [column.id]: { items: [], hasMore: false, page: 1, name: column.name },
       }));
@@ -130,14 +134,14 @@ function JobShow() {
     updates: Partial<Pick<Column, "name">>
   ) => {
     try {
-      const column = await updateColumn.mutateAsync({
+      const response = await updateColumn.mutateAsync({
         columnId,
         updates
       })
 
-      console.log("Updated column:", column)
+      console.log("Updated column:", response.data)
 
-      setColumns((prev) => ({
+      setColumnData((prev) => ({
         ...prev,
         [columnId]: { ...prev[columnId], name: column.name },
       }))
@@ -149,16 +153,16 @@ function JobShow() {
   const handleDeleteColumn = async (columnId: string) => {
     try {
       await deleteColumn.mutateAsync(columnId)
-      const { [columnId]: _, ...rest } = columns
-      setColumns(rest)
+      const { [columnId]: _, ...rest } = columnData
+      setColumnData(rest)
     } catch (error) {
       console.error("Error deleting column:", error)
     }
   }
 
   const { activeCandidate: dragActiveCandidate, handleDragStart, handleDragEnd } = useDragAndDrop({
-    columns,
-    setColumns,
+    columnData,
+    setColumnData,
     updateCandidateBackend,
     jobId: jobId!,
   })
@@ -188,23 +192,23 @@ function JobShow() {
               padding: "10px 0",
             }}
           >
-            {Object.keys(columns).map((columnId) => (
+            {Object.keys(columnData).map((columnId) => (
               <SortableContext
                 key={columnId}
-                items={columns[columnId]?.items.map((c) => c.id) || []}
+                items={columnData[columnId]?.items.map((c) => c.id) || []}
               >
                 <ColumnShow
                   columnId={columnId}
-                  columnName={columns[columnId].name}
-                  candidates={columns[columnId].items || []}
-                  hasMore={columns[columnId].hasMore}
+                  columnName={columnData[columnId].name}
+                  candidates={columnData[columnId].items || []}
+                  hasMore={columnData[columnId].hasMore}
                   onFetchMore={() => fetchCandidatesForColumn(columnId)}
                   onColumnUpdate={(columnId, updates) => handleUpdateColumn(columnId, updates)}
                   onDeleteColumn={() => handleDeleteColumn(columnId)}
                 />
               </SortableContext>
             ))}
-            <ColumnNew onAddColumn={addColumn} />
+            <ColumnNew onAddColumn={handleCreateColumn} />
           </Flex>
           <DragOverlay>
             {dragActiveCandidate && (

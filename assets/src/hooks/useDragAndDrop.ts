@@ -3,8 +3,8 @@ import { arrayMove } from "@dnd-kit/sortable"
 import { Candidate, ColumnState } from "../types"
 
 interface UseDragAndDropConfig {
-  columns: ColumnState
-  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>
+  columnData: ColumnState
+  setColumnData: React.Dispatch<React.SetStateAction<ColumnState>>
   updateCandidateBackend: (
     jobId: string,
     candidateId: number,
@@ -14,8 +14,8 @@ interface UseDragAndDropConfig {
 }
 
 export function useDragAndDrop({
-  columns,
-  setColumns,
+  columnData,
+  setColumnData,
   updateCandidateBackend,
   jobId,
 }: UseDragAndDropConfig) {
@@ -29,14 +29,14 @@ export function useDragAndDrop({
 
     if (activeElementType !== "item") return
 
-    const currentColumn = Object.keys(columns).find((column) =>
-      columns[column].items.find(
+    const currentColumn = Object.keys(columnData).find((column) =>
+      columnData[column].items.find(
         (candidate) => candidate.id === Number(activeElementId)
       )
     )
 
     if (currentColumn) {
-      const candidate = columns[currentColumn].items.find(
+      const candidate = columnData[currentColumn].items.find(
         (c) => c.id === Number(activeElementId)
       )
       setActiveCandidate(candidate || null)
@@ -92,8 +92,8 @@ export function useDragAndDrop({
   }
 
   const findColumnByItemId = (itemId: number): string | undefined => {
-    return Object.keys(columns).find((column) =>
-      columns[column].items.find((candidate) => candidate.id === itemId)
+    return Object.keys(columnData).find((column) =>
+      columnData[column].items.find((candidate) => candidate.id === itemId)
     )
   }
 
@@ -102,8 +102,8 @@ export function useDragAndDrop({
     overElementId: string
   ): string | undefined => {
     if (overElementType === "column") return overElementId
-    return Object.keys(columns).find((column) =>
-      columns[column].items.find(
+    return Object.keys(columnData).find((column) =>
+      columnData[column].items.find(
         (candidate) => candidate.id === Number(overElementId)
       )
     )
@@ -118,13 +118,13 @@ export function useDragAndDrop({
     activeId: number,
     overId: number
   ) => {
-    const items = [...columns[column].items]
+    const items = [...columnData[column].items]
     const activeIndex = items.findIndex((candidate) => candidate.id === activeId)
     const overIndex = items.findIndex((candidate) => candidate.id === overId)
 
     const updatedItems = arrayMove(items, activeIndex, overIndex)
 
-    setColumns((prev) => ({
+    setColumnData((prev) => ({
       ...prev,
       [column]: {
         ...prev[column],
@@ -145,13 +145,13 @@ export function useDragAndDrop({
     overElementType: string,
     overElementId: number
   ) => {
-    const sourceItems = columns[sourceColumn].items.filter(
+    const sourceItems = columnData[sourceColumn].items.filter(
       (candidate) => candidate.id !== activeId
     )
-    const movedItem = columns[sourceColumn].items.find(
+    const movedItem = columnData[sourceColumn].items.find(
       (candidate) => candidate.id === activeId
     )!
-    const destinationItems = [...columns[destinationColumn].items]
+    const destinationItems = [...columnData[destinationColumn].items]
 
     let overIndex: number = destinationItems.length
 
@@ -164,7 +164,7 @@ export function useDragAndDrop({
       destinationItems.push(movedItem)
     }
 
-    setColumns((prev) => ({
+    setColumnData((prev) => ({
       ...prev,
       [sourceColumn]: {
         ...prev[sourceColumn],

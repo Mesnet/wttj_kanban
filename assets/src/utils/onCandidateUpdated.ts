@@ -6,16 +6,16 @@ interface OnCandidateUpdatedParams {
     position: number
     column_id: string
   }
-  setColumns: React.Dispatch<React.SetStateAction<ColumnState>>
+  setColumnData: React.Dispatch<React.SetStateAction<ColumnState>>
 }
 
 export const onCandidateUpdated = ({
   payload,
-  setColumns,
+  setColumnData,
 }: OnCandidateUpdatedParams): void => {
   const { id, position, column_id } = payload
 
-  setColumns((prev) => {
+  setColumnData((prev) => {
     const updated = { ...prev }
     let fromColumn: string | null = null
     for (const column of Object.keys(updated)) {
