@@ -38,6 +38,12 @@ export const onCandidateUpdated = ({
         ...c,
         position: i,
       }))
+
+
+      if (fromColumn != column_id) {
+        console.log('fromColumn', fromColumn, column_id)
+        updated[fromColumn].page = Math.max(1, prev[fromColumn].page - 1)
+      }
     }
 
     // 4) Reindex the "to" column

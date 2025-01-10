@@ -21,13 +21,13 @@ describe("useDragAndDrop", () => {
           { id: 2, email: "candidate2@test.com", position: 1, column_id: "1" },
         ],
         hasMore: true,
-        page: 1,
+        page: 3,
         name: "New",
       },
       2: {
         items: [{ id: 3, email: "candidate3@test.com", position: 0, column_id: "1" }],
         hasMore: true,
-        page: 1,
+        page: 3,
         name: "Interview",
       },
       hired: { items: [], hasMore: true, page: 1, name: "Hired" },
@@ -184,4 +184,31 @@ describe("useDragAndDrop", () => {
     expect(setColumnData).not.toHaveBeenCalled()
     expect(updateCandidateBackend).not.toHaveBeenCalled()
   })
+
+  it("decreases the page count by one when moving a candidate between columns", () => {
+    const { result } = renderHook(() =>
+      useDragAndDrop({
+        columnData,
+        setColumnData,
+        updateCandidateBackend,
+        jobId,
+      })
+    )
+
+    // Simulate dragging item_1 from column 1 to column 2
+    act(() => {
+      result.current.handleDragEnd({
+        active: { id: "item_1" },
+        over: { id: "column_2" },
+      })
+    })
+
+    // Apply the state update function to the initial columnData
+    const updateFn = setColumnData.mock.calls[0][0]
+    const updatedColumns = updateFn(columnData)
+
+    // Verify that the page count of column 1 has been decreased by 1 but not below 1
+    expect(updatedColumns[1].page).toBe(2)
+  })
+
 })

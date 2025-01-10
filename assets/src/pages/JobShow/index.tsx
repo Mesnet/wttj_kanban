@@ -100,9 +100,7 @@ function JobShow() {
               <SortableContext key={columnId} items={columnData[columnId]?.items.map((c) => c.id) || []}>
                 <ColumnShow
                   columnId={columnId}
-                  columnName={columnData[columnId].name}
-                  candidates={columnData[columnId].items || []}
-                  hasMore={columnData[columnId].hasMore}
+                  columnData={columnData[columnId]}
                   onFetchMore={() => fetchCandidatesForColumn(columnId, jobId, columnData, fetchCandidates)}
                   onColumnUpdate={(columnId, updates) => handleUpdateColumn(columnId, updates, updateColumn, setColumnData)}
                   onDeleteColumn={() => handleDeleteColumn(columnId, deleteColumn, setColumnData, columnData)}

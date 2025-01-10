@@ -169,6 +169,7 @@ export function useDragAndDrop({
       [sourceColumn]: {
         ...prev[sourceColumn],
         items: reindexedItems(sourceItems),
+        page: Math.max(1, prev[sourceColumn].page - 1),
       },
       [destinationColumn]: {
         ...prev[destinationColumn],

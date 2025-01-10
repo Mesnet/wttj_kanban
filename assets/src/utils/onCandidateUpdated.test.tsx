@@ -19,7 +19,7 @@ describe("onCandidateUpdated", () => {
           { id: 2, email: "candidate2@test.com", position: 1, column_id: "1" },
         ],
         hasMore: true,
-        page: 1,
+        page: 3,
         name: "New",
       },
       "2": {
@@ -27,7 +27,7 @@ describe("onCandidateUpdated", () => {
           { id: 3, email: "candidate3@test.com", position: 0, column_id: "2" },
         ],
         hasMore: true,
-        page: 1,
+        page: 3,
         name: "Interview",
       },
       "3": { items: [], hasMore: true, page: 1, name: "Hired" },
@@ -135,4 +135,51 @@ describe("onCandidateUpdated", () => {
     // Expect columnData to remain unchanged
     expect(updatedcolumnData).toEqual(columnData)
   })
+
+  it("decreases the page count by one when moving a candidate between columns", () => {
+    const payload = {
+      id: 1,           // Move candidate #1
+      position: 0,     // To the first position
+      column_id: "2",  // Moving from column "1" -> "2"
+    }
+
+    // Set the initial page to 2 to test the decrement
+    columnData["1"].page = 3
+
+    onCandidateUpdated({ payload, setColumnData })
+
+    // Capture the update function
+    const updateFn = setColumnData.mock.calls[0][0]
+    const updatedColumnData = updateFn(columnData)
+
+    // Assert that the page count decreased by 1
+    expect(updatedColumnData["1"].page).toBe(2)
+  })
+
+  it("does not change the page count when moving a candidate within the same column", () => {
+    const payload = {
+      id: 1,           // Move candidate #1
+      position: 1,     // Move to position 1 in the same column
+      column_id: "1",  // Staying within column "1"
+    }
+
+    // Set the initial page to 3 to verify it doesn't change
+    columnData["1"].page = 3
+
+    onCandidateUpdated({ payload, setColumnData })
+
+    // Capture the update function
+    const updateFn = setColumnData.mock.calls[0][0]
+    const updatedColumnData = updateFn(columnData)
+
+    // Assert that the page count did NOT change
+    expect(updatedColumnData["1"].page).toBe(3)
+
+    // Assert the candidate was moved within the same column
+    expect(updatedColumnData["1"].items).toEqual([
+      { id: 2, email: "candidate2@test.com", position: 0, column_id: "1" },
+      { id: 1, email: "candidate1@test.com", position: 1, column_id: "1" },
+    ])
+  })
+
 })

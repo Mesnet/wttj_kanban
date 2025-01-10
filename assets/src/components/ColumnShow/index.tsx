@@ -12,21 +12,27 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll' // Import the new hook
 
+export type ColumnData = {
+  name: string
+  items: Candidate[]
+  hasMore: boolean
+  page: number
+}
+
 type ColumnProps = {
   columnId: string
-  columnName: string
-  candidates: Candidate[]
+  columnData: ColumnData
   onFetchMore: () => void,
   onColumnUpdate: (columnId: string, updates: Partial<Pick<Column, "name">>) => void,
   onDeleteColumn: (columnId: string) => void,
-  hasMore: boolean
 }
 
-function ColumnShow({ columnId, columnName, candidates, onFetchMore, onColumnUpdate, onDeleteColumn, hasMore }: ColumnProps) {
+function ColumnShow({ columnId, columnData, onFetchMore, onColumnUpdate, onDeleteColumn }: ColumnProps) {
+  const { name, items, hasMore, page } = columnData
   const { setNodeRef } = useDroppable({ id: `column_${columnId}` })
   const scrollableRef = useRef<HTMLDivElement>(null)
   const [isEditing, setIsEditing] = useState(false)
-  const [newColumnName, setNewColumnName] = useState(columnName)
+  const [newColumnName, setNewColumnName] = useState(name)
 
   useInfiniteScroll({ containerRef: scrollableRef, hasMore, onFetchMore })
   // Merge refs
@@ -79,7 +85,7 @@ function ColumnShow({ columnId, columnName, candidates, onFetchMore, onColumnUpd
             </InputText>
 
             <Flex justifyContent="space-between">
-              <Button onClick={updateColumnName} variant="primary" disabled={!newColumnName.trim() || newColumnName === columnName}>
+              <Button onClick={updateColumnName} variant="primary" disabled={!newColumnName.trim() || newColumnName === name}>
                 Update
               </Button>
               <Flex>
@@ -88,7 +94,7 @@ function ColumnShow({ columnId, columnName, candidates, onFetchMore, onColumnUpd
                 </Button>
 
 
-                <Button onClick={() => { setIsEditing(false); setNewColumnName(columnName)}} variant="ghost" ml={5}>
+                <Button onClick={() => { setIsEditing(false); setNewColumnName(name)}} variant="ghost" ml={5}>
                   &times;
                 </Button>
               </Flex>
@@ -105,21 +111,21 @@ function ColumnShow({ columnId, columnName, candidates, onFetchMore, onColumnUpd
               textTransform="capitalize"
 
             >
-              {columnName}
+              {name}
             </Text>
             <Badge>
-              {`${candidates.length}${hasMore ? '+' : ''}`}
+              {`${items.length}${hasMore ? '+' : ''}`}
             </Badge>
           </>
         )}
 
       </Flex>
-      {!candidates.length && (
+      {!items.length && (
         <Text color="neutral-500" textAlign="center" pt={10}>
           No candidates yet
         </Text>
       )}
-      <SortableContext items={candidates.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={items.map((c) => c.id)} strategy={verticalListSortingStrategy}>
         <Flex
           ref={mergedRef} // Use the merged ref here
           direction="column"
@@ -127,11 +133,11 @@ function ColumnShow({ columnId, columnName, candidates, onFetchMore, onColumnUpd
           pb={0}
           style={{
             height: '100%',
-            maxHeight: 'calc(100vh - 205px)',
+            maxHeight: 'calc(100vh - 225px)',
             overflowY: 'auto',
           }}
         >
-          {candidates.map((candidate) => (
+          {items.map((candidate) => (
             <CandidateCard key={candidate.id} candidate={candidate} />
           ))}
         </Flex>
