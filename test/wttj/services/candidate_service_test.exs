@@ -183,4 +183,36 @@ defmodule Wttj.Candidates.CandidateServiceTest do
 
     assert interview_positions == []
   end
+
+  test "does not perform N+1 queries when moving a candidate with 100 others in the same column", %{columns: %{new: column_new}} do
+    import ExUnit.CaptureLog
+
+    new_job = job_fixture()
+    candidate_to_move = candidate_fixture(%{job_id: new_job.id,column_id: column_new.id,position: 0})
+    # Create 1000 candidates in the "New" column
+    for i <- 1..99 do
+      candidate_fixture(%{
+        job_id: new_job.id,
+        column_id: column_new.id,
+        position: i
+      })
+    end
+
+    attrs = %{position: 99, column_id: column_new.id}
+
+    # Capture SQL logs during the candidate update
+    log =
+      capture_log(fn ->
+        {:ok, _updated_candidate} = CandidateService.update_candidate(candidate_to_move, attrs)
+      end)
+
+    # Count the number of SQL queries executed
+    query_count =
+      String.split(log, "\n")
+      |> Enum.filter(&String.contains?(&1, "QUERY"))
+      |> length()
+
+    # Assert that the number of queries is within an acceptable range
+    assert query_count <= 10, "Expected no more than 10 queries, got #{query_count}"
+  end
 end
