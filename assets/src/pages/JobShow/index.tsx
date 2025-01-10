@@ -37,6 +37,7 @@ import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 
 function JobShow() {
   const [columnData, setColumnData] = useState<ColumnState>({})
+  const [dataInitialized, setDataInitialized] = useState(false)
 
   const { jobId } = useParams()
   const { job } = useJob(jobId)
@@ -86,11 +87,13 @@ function JobShow() {
   }, [jobId, columnData])
 
   useEffect(() => {
-    if (!Object.keys(columnData).length) return
+    if (!Object.keys(columnData).length || dataInitialized) return
 
     Object.keys(columnData).forEach((columnId) => {
       fetchCandidatesForColumn(columnId)
     })
+    setDataInitialized(true)
+
   }, [Object.keys(columnData).length])
 
   // Fetch candidates for a column
@@ -134,11 +137,9 @@ function JobShow() {
         updates
       })
 
-      console.log("Updated column:", response.data)
-
       setColumnData((prev) => ({
         ...prev,
-        [columnId]: { ...prev[columnId], name: column.name },
+        [columnId]: { ...prev[columnId], name: response.data.name },
       }))
     } catch (error) {
       console.error("Error updating column:", error)

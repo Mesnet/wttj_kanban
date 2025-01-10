@@ -52,8 +52,7 @@ export const updateColumn = async (
     throw new Error(`Failed to update column with id: ${columnId}`);
   }
 
-  const data = await response.json();
-  return data
+  return await response.json()
 }
 
 export const deleteColumn = async (columnId: string): Promise<void> => {
