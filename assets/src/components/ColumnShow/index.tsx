@@ -28,18 +28,20 @@ type ColumnProps = {
 }
 
 function ColumnShow({ columnId, columnData, onFetchMore, onColumnUpdate, onDeleteColumn }: ColumnProps) {
-  const { name, items, hasMore, page } = columnData
+  const { name, items, hasMore } = columnData
   const { setNodeRef } = useDroppable({ id: `column_${columnId}` })
-  const scrollableRef = useRef<HTMLDivElement>(null)
+  const scrollableRef = useRef<HTMLDivElement | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [newColumnName, setNewColumnName] = useState(name)
 
   useInfiniteScroll({ containerRef: scrollableRef, hasMore, onFetchMore })
   // Merge refs
-  const mergedRef = (node: HTMLDivElement) => {
-    setNodeRef(node)
-    scrollableRef.current = node
-  }
+  const mergedRef = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    if (node && scrollableRef.current) {
+      scrollableRef.current = node;
+    }
+  };
 
   const updateColumnName = () => {
     setIsEditing(false)

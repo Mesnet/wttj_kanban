@@ -2,14 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { onCandidateUpdated } from "./onCandidateUpdated"
 import { Candidate } from "../types"
-import React from "react"
 
 describe("onCandidateUpdated", () => {
   let columnData: Record<
     string,
     { items: Candidate[]; hasMore: boolean; page: number; name: string }
   >
-  let setColumnData: React.Dispatch<React.SetStateAction<typeof columnData>>
+	let setColumnData: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     columnData = {
