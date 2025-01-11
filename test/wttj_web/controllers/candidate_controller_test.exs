@@ -3,24 +3,28 @@ defmodule WttjWeb.CandidateControllerTest do
 
   import Wttj.JobsFixtures
   import Wttj.CandidatesFixtures
+  import Wttj.ColumnsFixtures
 
   alias Wttj.Candidates.Candidate
 
-  @update_attrs %{
-    position: 43,
-    status: :interview
-  }
-  @invalid_attrs %{position: nil, status: nil, email: nil}
-
   setup %{conn: conn} do
     job = job_fixture()
-    {:ok, conn: put_req_header(conn, "accept", "application/json"), job: job}
+    column = column_fixture()
+    {:ok, conn: put_req_header(conn, "accept", "application/json"), job: job, column: column}
   end
 
   describe "index" do
-    test "lists all candidates", %{conn: conn, job: job} do
-      conn = get(conn, ~p"/api/jobs/#{job}/candidates")
-      assert json_response(conn, 200)["data"] == []
+    test "lists all candidates", %{conn: conn, job: job, column: column} do
+      conn = get(conn, ~p"/api/jobs/#{job}/candidates?column_id=#{column.id}&page=1")
+
+      assert json_response(conn, 200) == %{
+        "results" => [],
+        "pagination" => %{
+          "total_pages" => 0,
+          "total_count" => 0,
+          "current_page" => 1
+        }
+      }
     end
   end
 
@@ -30,10 +34,13 @@ defmodule WttjWeb.CandidateControllerTest do
     test "renders candidate when data is valid", %{
       conn: conn,
       job: job,
+      column: column,
       candidate: %Candidate{id: id} = candidate
     } do
       email = unique_user_email()
-      attrs = Map.put(@update_attrs, :email, email)
+      column_id = column.id
+      attrs = %{position: 43, column_id: column_id, email: email}
+
       conn = put(conn, ~p"/api/jobs/#{job}/candidates/#{candidate}", candidate: attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -43,18 +50,18 @@ defmodule WttjWeb.CandidateControllerTest do
                "id" => ^id,
                "email" => ^email,
                "position" => 43,
-               "status" => "interview"
+               "column_id" => ^column_id
              } = json_response(conn, 200)["data"]
     end
 
     test "renders errors when data is invalid", %{conn: conn, candidate: candidate, job: job} do
-      conn = put(conn, ~p"/api/jobs/#{job}/candidates/#{candidate}", candidate: @invalid_attrs)
+      conn = put(conn, ~p"/api/jobs/#{job}/candidates/#{candidate}", candidate: %{position: nil, column_id: nil, email: nil})
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  defp create_candidate(%{job: job}) do
-    candidate = candidate_fixture(%{job_id: job.id})
+  defp create_candidate(%{job: job, column: column}) do
+    candidate = candidate_fixture(%{job_id: job.id, column_id: column.id})
     %{candidate: candidate}
   end
 end

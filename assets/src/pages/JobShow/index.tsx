@@ -1,36 +1,90 @@
-import { useParams } from 'react-router-dom'
-import { useJob, useCandidates } from '../../hooks'
-import { Text } from '@welcome-ui/text'
-import { Flex } from '@welcome-ui/flex'
-import { Box } from '@welcome-ui/box'
-import { useMemo } from 'react'
-import { Candidate } from '../../api'
-import CandidateCard from '../../components/Candidate'
-import { Badge } from '@welcome-ui/badge'
+import { useEffect, useState } from "react"
+import { useParams } from "react-router-dom"
 
-type Statuses = 'new' | 'interview' | 'hired' | 'rejected'
-const COLUMNS: Statuses[] = ['new', 'interview', 'hired', 'rejected']
+import { Text } from "@welcome-ui/text"
+import { Flex } from "@welcome-ui/flex"
+import { Box } from "@welcome-ui/box"
 
-interface SortedCandidates {
-  new?: Candidate[]
-  interview?: Candidate[]
-  hired?: Candidate[]
-  rejected?: Candidate[]
-}
+import { ColumnState } from "../../types"
+import { useJob,
+  useUpdateCandidate,
+  useColumns,
+  useCreateColumn,
+  useCandidates,
+  useUpdateColumn,
+  useDeleteColumn
+} from "../../hooks"
+
+import ColumnShow from "../../components/ColumnShow"
+import CandidateCard from "../../components/Candidate"
+import ColumnNew from "../../components/ColumnNew"
+
+import { DndContext, closestCorners, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { SortableContext } from "@dnd-kit/sortable"
+
+import { JobWebSocket } from "../../utils/websocket"
+import { onCandidateUpdated } from "../../utils/onCandidateUpdated"
+import { useDragAndDrop } from "../../hooks/useDragAndDrop"
+import { initializeColumns, fetchCandidatesForColumn, handleCreateColumn, handleUpdateColumn, handleDeleteColumn } from "../../helpers/columnHelper"
 
 function JobShow() {
+  const [columnData, setColumnData] = useState<ColumnState>({})
+  const [dataInitialized, setDataInitialized] = useState(false)
+
   const { jobId } = useParams()
   const { job } = useJob(jobId)
-  const { candidates } = useCandidates(jobId)
+  const { columns } = useColumns()
 
-  const sortedCandidates = useMemo(() => {
-    if (!candidates) return {}
+  const createColumn = useCreateColumn()
+  const updateColumn = useUpdateColumn()
+  const deleteColumn = useDeleteColumn()
 
-    return candidates.reduce<SortedCandidates>((acc, c: Candidate) => {
-      acc[c.status] = [...(acc[c.status] || []), c].sort((a, b) => a.position - b.position)
-      return acc
-    }, {})
-  }, [candidates])
+  const updateCandidate = useUpdateCandidate()
+  const fetchCandidates = useCandidates(setColumnData, columnData)
+
+  useEffect(() => {
+    initializeColumns(columns, setColumnData)
+  }, [columns])
+
+  useEffect(() => {
+    if (!jobId || !Object.keys(columnData).length) return
+
+    const ws = new JobWebSocket({
+      jobId,
+      token: "your-secret-token",
+      onCandidateUpdated: (payload) => {
+        onCandidateUpdated({ payload, setColumnData })
+      },
+      onError: (err) => console.error("WebSocket error:", err),
+    })
+
+    ws.joinChannel()
+
+    return () => {
+      ws.leaveChannel()
+      ws.disconnect()
+    }
+  }, [jobId, columnData])
+
+  useEffect(() => {
+    if (!Object.keys(columnData).length || dataInitialized) return
+
+    Object.keys(columnData).forEach((columnId) => {
+      fetchCandidatesForColumn(columnId, jobId, columnData, fetchCandidates)
+    })
+    setDataInitialized(true)
+  }, [Object.keys(columnData).length])
+
+  const { activeCandidate: dragActiveCandidate, handleDragStart, handleDragEnd } = useDragAndDrop({
+    columnData,
+    setColumnData,
+    updateCandidateBackend: (jobId, candidateId, updates) => {
+      updateCandidate.mutate({ jobId, candidateId, updates: { candidate: updates } })
+    },
+    jobId: jobId!,
+  })
+
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor))
 
   return (
     <>
@@ -39,38 +93,26 @@ function JobShow() {
           {job?.name}
         </Text>
       </Box>
-
       <Box p={20}>
-        <Flex gap={10}>
-          {COLUMNS.map(column => (
-            <Box
-              w={300}
-              border={1}
-              backgroundColor="white"
-              borderColor="neutral-30"
-              borderRadius="md"
-              overflow="hidden"
-            >
-              <Flex
-                p={10}
-                borderBottom={1}
-                borderColor="neutral-30"
-                alignItems="center"
-                justify="space-between"
-              >
-                <Text color="black" m={0} textTransform="capitalize">
-                  {column}
-                </Text>
-                <Badge>{(sortedCandidates[column] || []).length}</Badge>
-              </Flex>
-              <Flex direction="column" p={10} pb={0}>
-                {sortedCandidates[column]?.map((candidate: Candidate) => (
-                  <CandidateCard candidate={candidate} />
-                ))}
-              </Flex>
-            </Box>
-          ))}
-        </Flex>
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <Flex gap={10} style={{ overflowX: "auto", overflowY: "hidden", whiteSpace: "nowrap", padding: "10px 0" }}>
+            {Object.keys(columnData).map((columnId) => (
+              <SortableContext key={columnId} items={columnData[columnId]?.items.map((c) => c.id) || []}>
+                <ColumnShow
+                  columnId={columnId}
+                  columnData={columnData[columnId]}
+                  onFetchMore={() => fetchCandidatesForColumn(columnId, jobId, columnData, fetchCandidates)}
+                  onColumnUpdate={(columnId, updates) => handleUpdateColumn(columnId, updates, updateColumn, setColumnData)}
+                  onDeleteColumn={() => handleDeleteColumn(columnId, deleteColumn, setColumnData, columnData)}
+                />
+              </SortableContext>
+            ))}
+            <ColumnNew onAddColumn={(columnName) => handleCreateColumn(columnName, createColumn, setColumnData)} />
+          </Flex>
+          <DragOverlay>
+            {dragActiveCandidate && <CandidateCard candidate={dragActiveCandidate} isOverlay />}
+          </DragOverlay>
+        </DndContext>
       </Box>
     </>
   )

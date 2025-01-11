@@ -21,6 +21,7 @@ defmodule WttjWeb.Router do
     resources "/jobs", JobController, except: [:new, :edit] do
       resources "/candidates", CandidateController, except: [:new, :edit]
     end
+    resources "/columns", ColumnController, except: [:new, :edit]
   end
 
   scope "/", WttjWeb do
