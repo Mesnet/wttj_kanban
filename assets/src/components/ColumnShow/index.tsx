@@ -38,7 +38,7 @@ function ColumnShow({ columnId, columnData, onFetchMore, onColumnUpdate, onDelet
   // Merge refs
   const mergedRef = (node: HTMLDivElement | null) => {
     setNodeRef(node);
-    if (node && scrollableRef.current) {
+    if (node) {
       scrollableRef.current = node;
     }
   };
