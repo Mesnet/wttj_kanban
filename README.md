@@ -24,6 +24,8 @@ I used WebSocket for real-time features. Since Phoenix natively integrates the C
   
 - **Query Optimization:** To optimize queries, I used `update_all`. However, due to the `candidates_job_id_position_column_id_index` index, a direct operation wasn't feasible. I employed an intermediate update with an offset to free up all positions to be updated, followed by a bulk update to assign final positions.
 
+- **Candidate View:** You can access to the candidate view on the following path /jobs/:job_id/candidates/:candidate_id
+
 ### 4. Future Enhancements
 - **Dynamic Column Management:**
   - Positioning with Drag and Drop
